@@ -13,7 +13,7 @@ ufc-elo/
 │   ├── api/                    # FastAPI optionally
 │   │   └── main.py
 │   │
-│   ├── engine/                 # C++
+│   ├── engine/                 # Python
 │   │   ├── elo.py
 │   │
 │   └── config/
