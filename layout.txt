@@ -1,0 +1,35 @@
+ufc-elo/
+│
+├── backend/
+│   ├── sql/
+│   │   ├── schema.sql
+│   │   └── seed.sql
+│   │
+│   ├── scrapers/               # Python
+│   │   ├── scrape_fights.py
+│   │   ├── scrape_odds.py
+│   │   └── utils/
+│   │
+│   ├── api/                    # FastAPI optionally
+│   │   └── main.py
+│   │
+│   ├── engine/                 # C++
+│   │   ├── elo.py
+│   │
+│   └── config/
+│       └── config.yaml
+│
+├── frontend/                   # React
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── FighterCard.jsx
+│   │   │   ├── FightHistoryTable.jsx
+│   │   │   ├── RatingChart.jsx
+│   │   └── pages/
+│   │       ├── FighterPage.jsx
+│   │       ├── RankingsPage.jsx
+│   └── package.json
+│
+└── docs/
+    ├── architecture.md
+    └── data_pipeline.md
