@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS Fighters (
     birth_date DATE,
     country VARCHAR(50),
     weight_class VARCHAR(20),
-    height_cm DECIMAL(5,2),
-    reach_cm DECIMAL(5,2)
+    height_in DECIMAL(5,2),
+    reach_in DECIMAL(5,2)
 );
 
 -- Fighter stats table, static not based on months

@@ -7,7 +7,7 @@ USE UFC_ELO;
 -- ======================================
 -- Fighters (Lightweight & Middleweight)
 -- ======================================
-INSERT INTO Fighters (first_name, last_name, nickname, birth_date, country, weight_class, height_cm, reach_cm)
+INSERT INTO Fighters (first_name, last_name, nickname, birth_date, country, weight_class, height_in, reach_in)
 VALUES
   -- Lightweight (10 fighters)
   ('Conor','McGregor','The Notorious','1988-07-14','Ireland','Lightweight',175,188),
