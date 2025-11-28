@@ -1,9 +1,25 @@
 # uvicorn main:app --reload
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from cache import cached
 from db import call_procedure
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:5173",  # your React dev server
+    "http://localhost:3000",  # optional if using default React port
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 
 # Get fighter profile
 @app.get("/fighters/{fighter_id}")
