@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS Events (
     venue VARCHAR(100),
     city VARCHAR(50),
     country VARCHAR(50),
-    referee VARCHAR(100)
+    -- referee VARCHAR(100)
 );
 
 -- Fights table links to an event as well as both fighters
