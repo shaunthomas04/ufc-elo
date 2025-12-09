@@ -43,6 +43,28 @@ def get_event_info_dict(soup):
 
     return output
 
+def get_fight_info(soup):
+    output = {}
+
+
+
+
+    # round, time, method
+    fight_round_info = soup.find("div", class_="e-t5 round")
+    fight_time_info = soup.find("div", class_="e-t5 time")
+    fight_method_info = soup.find("div", class_="e-t5 method")
+    output["round"] = fight_round_info.get_text(" ", strip=True)
+    output["time_in_round"] = fight_time_info.get_text(" ", strip=True)
+    output["finish_method"] = fight_method_info.get_text(" ", strip=True)
+
+
+    # a fighter, b fighter, and weightclass
+    names_and_weight_info = soup.find("div", class_="details-content__header")
+    
+
+
+
+
 # get_all_event_urls()
 event_url = "https://www.ufc.com//event/ufc-321"
 response = requests.get(event_url)

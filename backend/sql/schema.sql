@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS FightStats (
     takedowns_landed INT DEFAULT 0,
     takedowns_attempted INT DEFAULT 0,
     submissions_attempted INT DEFAULT 0,
-    control_time TIME,
+    knockdowns INT DEFAULT 0,
     FOREIGN KEY (fight_id) REFERENCES Fights(fight_id) ON DELETE CASCADE,
     FOREIGN KEY (fighter_id) REFERENCES Fighters(fighter_id) ON DELETE CASCADE,
     UNIQUE(fight_id, fighter_id)
