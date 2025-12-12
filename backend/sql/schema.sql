@@ -1,0 +1,91 @@
+CREATE DATABASE IF NOT EXISTS UFC_ELO;
+USE UFC_ELO;
+
+-- Fighters table
+CREATE TABLE IF NOT EXISTS Fighters (
+    fighter_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    nickname VARCHAR(50),
+    birth_date DATE,
+    country VARCHAR(50),
+    weight_class VARCHAR(20),
+    height_in DECIMAL(5,2),
+    reach_in DECIMAL(5,2),
+    url VARCHAR(255)
+);
+
+-- Fighter stats table, static not based on months
+CREATE TABLE IF NOT EXISTS FighterStats (
+    stats_id INT AUTO_INCREMENT PRIMARY KEY,
+    fighter_id INT NOT NULL,
+    wins INT DEFAULT 0,
+    losses INT DEFAULT 0,
+    draws INT DEFAULT 0,
+    ko_wins INT DEFAULT 0,
+    sub_wins INT DEFAULT 0,
+    decision_wins INT DEFAULT 0,
+    strikes_landed INT DEFAULT 0,
+    strikes_attempted INT DEFAULT 0,
+    takedowns_landed INT DEFAULT 0,
+    takedowns_attempted INT DEFAULT 0,
+    FOREIGN KEY (fighter_id) REFERENCES Fighters(fighter_id)
+        ON DELETE CASCADE
+);
+
+-- Fighter Elo ratings table per date
+CREATE TABLE IF NOT EXISTS FighterElo (
+    elo_id INT AUTO_INCREMENT PRIMARY KEY,
+    fighter_id INT NOT NULL,
+    elo_score DECIMAL(8,2) NOT NULL,
+    rating_date DATE NOT NULL,
+    FOREIGN KEY (fighter_id) REFERENCES Fighters(fighter_id)
+        ON DELETE CASCADE,
+    UNIQUE(fighter_id, rating_date)
+);
+
+-- Events table
+CREATE TABLE IF NOT EXISTS Events (
+    event_id INT AUTO_INCREMENT PRIMARY KEY,
+    event_name VARCHAR(100) NOT NULL,
+    event_date DATE NOT NULL,
+    venue VARCHAR(100),
+    city VARCHAR(50),
+    country VARCHAR(50),
+    -- referee VARCHAR(100)
+);
+
+-- Fights table links to an event as well as both fighters
+CREATE TABLE IF NOT EXISTS Fights (
+    fight_id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id INT NOT NULL,
+    fighterA_id INT NOT NULL,
+    fighterB_id INT NOT NULL,
+    winner_id INT,
+    finish_method VARCHAR(50),
+    round INT,
+    time_in_round TIME,
+    weight_class VARCHAR(20),
+    odds_fighterA INT,
+    odds_fighterB INT,
+    FOREIGN KEY (event_id) REFERENCES Events(event_id) ON DELETE CASCADE,
+    FOREIGN KEY (fighterA_id) REFERENCES Fighters(fighter_id) ON DELETE CASCADE,
+    FOREIGN KEY (fighterB_id) REFERENCES Fighters(fighter_id) ON DELETE CASCADE,
+    FOREIGN KEY (winner_id) REFERENCES Fighters(fighter_id)
+);
+
+-- Fight stats table per fighter
+CREATE TABLE IF NOT EXISTS FightStats (
+    fight_stats_id INT AUTO_INCREMENT PRIMARY KEY,
+    fight_id INT NOT NULL,
+    fighter_id INT NOT NULL,
+    strikes_landed INT DEFAULT 0,
+    strikes_attempted INT DEFAULT 0,
+    takedowns_landed INT DEFAULT 0,
+    takedowns_attempted INT DEFAULT 0,
+    submissions_attempted INT DEFAULT 0,
+    knockdowns INT DEFAULT 0,
+    FOREIGN KEY (fight_id) REFERENCES Fights(fight_id) ON DELETE CASCADE,
+    FOREIGN KEY (fighter_id) REFERENCES Fighters(fighter_id) ON DELETE CASCADE,
+    UNIQUE(fight_id, fighter_id)
+);

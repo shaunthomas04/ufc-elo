@@ -1,0 +1,66 @@
+ufc-elo/
+│
+├── backend/
+│   ├── sql/
+│   │   ├── schema.sql
+│   │   └── seed.sql
+│   │
+│   ├── scrapers/               # Python
+│   │   ├── scrape_fights.py
+│   │   ├── scrape_odds.py
+│   │   └── utils/
+│   │
+│   ├── api/                    # FastAPI optionally
+│   │   └── main.py
+│   │
+│   ├── engine/                 # Python
+│   │   ├── elo.py
+│   │
+│   └── config/
+│       └── config.yaml
+│
+├── frontend/                   # React
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── FighterCard.jsx
+│   │   │   ├── FightHistoryTable.jsx
+│   │   │   ├── RatingChart.jsx
+│   │   └── pages/
+│   │       ├── FighterPage.jsx
+│   │       ├── RankingsPage.jsx
+│   └── package.json
+│
+└── docs/
+    ├── architecture.md
+    └── data_pipeline.md
+
+
+Core Features You Already Have
+
+Weight Class Rankings
+
+Show champ + top 5 in each division.
+
+Include Elo, wins/losses, maybe recent streaks.
+
+Pound-for-Pound (P4P) Rankings
+
+Update dynamically based on slider (month/year).
+
+Time Slider
+
+Let users “scroll through history” to see rankings and P4P evolve.
+
+Fighter Detail Page
+
+Stats overview (career totals, height/reach, record).
+
+Elo graph over time.
+
+List of all fights.
+
+Fight Detail Page
+
+Fighters side by side.
+
+Compare key stats (strikes, takedowns, finishes, Elo before/after).
