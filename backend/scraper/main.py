@@ -93,7 +93,8 @@ def get_fight_info(soup, iframe_soup):
 
     fight_stats_soup = iframe_soup.find("div", class_="c-stat-metric-compare-group")
     output["fight_stats"] = get_fight_stats_info(fight_stats_soup)
-    print(json.dumps(output, indent=4))
+
+    return output
     
 
 def get_fight_stats_info(soup):
@@ -143,7 +144,9 @@ def get_fight_stats_info(soup):
     
     return output
 
-def click_fight_buttons(driver):
+def get_all_event_fights_info_selenium(driver):
+    output = []
+    
     wait = WebDriverWait(driver, 15)
     # Wait until buttons are present and get them
     wait.until(EC.presence_of_all_elements_located(
@@ -173,11 +176,27 @@ def click_fight_buttons(driver):
 
         driver.switch_to.default_content()
 
-        get_fight_info(matchup_info[i], iframe_soup)
+        output.append(get_fight_info(matchup_info[i], iframe_soup))
 
-driver = webdriver.Chrome()
-driver.get("https://www.ufc.com/event/ufc-321")
+    return output
 
-click_fight_buttons(driver)
+def get_entire_event_information(url):
+    output = {}
+    driver = webdriver.Chrome()
+    driver.get(url)
 
-driver.quit()
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    output["fights"] = get_all_event_fights_info_selenium(driver)
+    output["event_info"] = get_event_info_dict(soup)
+    driver.quit()
+
+
+    return output
+
+# driver = webdriver.Chrome()
+# driver.get("https://www.ufc.com/event/ufc-321")
+
+print(get_entire_event_information("https://www.ufc.com/event/ufc-321"))
+
