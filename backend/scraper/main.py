@@ -1,6 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium import webdriver
+import time
 
 base_url = "https://www.ufc.com"
 
@@ -46,7 +51,9 @@ def get_event_info_dict(soup):
 def get_fight_info(soup):
     output = {}
 
-
+    # weight class
+    weight_class_info = soup.find("div", class_="c-listing-fight__class-text")
+    output["weight_class"] = weight_class_info.get_text(" ", strip=True).split(" ")[0]
 
 
     # round, time, method
@@ -59,14 +66,56 @@ def get_fight_info(soup):
 
 
     # a fighter, b fighter, and weightclass
-    names_and_weight_info = soup.find("div", class_="details-content__header")
+    # names_and_weight_info = soup.find("div", class_="details-content__header")
+
+    print(output)
     
 
+def selenium_fight_info(soup):
+    fight_buttons_clickable = soup.find_all("button", class_="c-listing-fight__expand-button")
+    print(len(fight_buttons_clickable))
 
 
+
+
+def click_fight_buttons(driver):
+    wait = WebDriverWait(driver, 15)
+
+    # Wait until buttons are present and get them
+    wait.until(EC.presence_of_all_elements_located(
+        (By.CSS_SELECTOR, "button.c-listing-fight__expand-button")
+    ))
+    buttons = driver.find_elements(By.CSS_SELECTOR, "button.c-listing-fight__expand-button")
+    print(f"Found {len(buttons)} fight buttons")
+
+    for i in range(len(buttons)):
+        # Re-find buttons each loop to avoid stale element errors
+        buttons = driver.find_elements(By.CSS_SELECTOR, "button.c-listing-fight__expand-button")
+        button = buttons[i]
+
+        # Click the button using JS (safe with overlays)
+        driver.execute_script("arguments[0].click();", button)
+        print(f"✅ Clicked button {i + 1}/{len(buttons)}")
+        time.sleep(5)
+        html = driver.page_source
+        soup = BeautifulSoup(html, "html.parser")
+        # matchup_info = soup.find_all("li", class_="l-listing__item")
+        # print(matchup_info[i].prettify())
+        # matchup_info = soup.find("div", class_="c-matchup--results")
+        # print(matchup_info.prettify())
+
+
+
+driver = webdriver.Chrome()
+driver.get("https://www.ufc.com/event/ufc-321")
+
+click_fight_buttons(driver)
+
+driver.quit()
 
 # get_all_event_urls()
 event_url = "https://www.ufc.com//event/ufc-321"
 response = requests.get(event_url)
 soup = BeautifulSoup(response.text, "html.parser")
-print(json.dumps(get_event_info_dict(soup), indent=4))
+selenium_fight_info(soup)
+# print(json.dumps(get_event_info_dict(soup), indent=4))
