@@ -52,12 +52,10 @@ def get_fight_info(soup, iframe_soup):
     output = {}
 
     # weight class
-    weight_class_info = soup.find("div", class_="c-listing-fight__class-text")
-    weight_class_text = weight_class_info.get_text(" ", strip=True)
-    if "Women" in weight_class_text:
-        output["weight_class"] = f"Women {weight_class_info.get_text(" ", strip=True).split(" ")[1]}"
-    else:
-        output["weight_class"] = f"Men {weight_class_info.get_text(" ", strip=True).split(" ")[0]}"
+    weight_class_text = soup.find("div", class_="c-listing-fight__class-text").get_text(" ", strip=True)
+    gender = "Women" if "Women" in weight_class_text or "Women's" in weight_class_text else "Men"
+    weight = ' '.join([w for w in weight_class_text.split() if w.lower() not in ["men's","women's","men","women","bout","title"]])
+    output["weight_class"] = f"{gender} {weight.title()}"
 
     # round, time, method
     fight_details_soup = iframe_soup.find("div", class_="c-matchup--results")
@@ -81,8 +79,69 @@ def get_fight_info(soup, iframe_soup):
     output["odds_fighterA"] = fighter_odds_soup[0].get_text(" ", strip=True)
     output["odds_fighterB"] = fighter_odds_soup[1].get_text(" ", strip=True)
 
+    # winner
+    outcome_soup = soup.find("div", class_="c-listing-fight__corner--red")
+    fighterA_outcome = outcome_soup.get_text(" ", strip=True)
+    if fighterA_outcome == "NC":
+        output["winner"] = "NC"
+    elif fighterA_outcome == "Draw":
+        output["winner"] = "DRAW"
+    elif fighterA_outcome == "Win":
+        output["winner"] = red_fighter_soup.get_text(" ", strip=True)
+    else:
+        output["winner"] = blue_fighter_soup.get_text(" ", strip=True)
 
+    fight_stats_soup = iframe_soup.find("div", class_="c-stat-metric-compare-group")
+    output["fight_stats"] = get_fight_stats_info(fight_stats_soup)
+    print(json.dumps(output, indent=4))
     
+
+def get_fight_stats_info(soup):
+    output = {}
+
+    # strikes
+    strikes_soup = soup.find("div", class_="c-stat-metric-compare total_strikes")
+    output["fighterA_strikes_landed"] = strikes_soup.find("span", "c-stat-metric-compare__value c-stat-metric-compare__number").get_text(" ", strip=True)
+    output["fighterB_strikes_landed"] = strikes_soup.find("span", "c-stat-metric-compare__value_2 c-stat-metric-compare__number").get_text(" ", strip=True)
+    output["fighterA_strikes_percent"] = strikes_soup.find("span", "c-stat-metric-compare__percent percent").get_text(" ", strip=True)
+    output["fighterB_strikes_percent"] = strikes_soup.find("span", "c-stat-metric-compare__percent_2 percent").get_text(" ", strip=True)
+    
+    # signficant strikes
+    submissions_soup = soup.find("div", class_="c-stat-metric-compare sig_strikes")
+    output["fighterA_significant_strikes"] = submissions_soup.find("span", "c-stat-metric-compare__value c-stat-metric-compare__number").get_text(" ", strip=True)
+    output["fighterB_significant_strikes"] = submissions_soup.find("span", "c-stat-metric-compare__value_2 c-stat-metric-compare__number").get_text(" ", strip=True)
+
+    # takedowns
+    takedowns_soup = soup.find("div", class_="c-stat-metric-compare takedowns")
+    output["fighterA_takedowns_landed"] = takedowns_soup.find("span", "c-stat-metric-compare__value c-stat-metric-compare__number").get_text(" ", strip=True)
+    output["fighterB_takedowns_landed"] = takedowns_soup.find("span", "c-stat-metric-compare__value_2 c-stat-metric-compare__number").get_text(" ", strip=True)
+    if takedowns_soup.find("span", "c-stat-metric-compare__value_of attempted"):
+        if takedowns_soup.find("span", "c-stat-metric-compare__value_of attempted").get_text(" ", strip=True) != "":
+            output["fighterA_takedowns_attempted"] = takedowns_soup.find("span", "c-stat-metric-compare__value_of attempted").get_text(" ", strip=True).replace("of ", "")
+        else:
+            output["fighterA_takedowns_attempted"] = 0
+    else:
+        output["fighterA_takedowns_attempted"] = 0
+
+    if takedowns_soup.find("span", "c-stat-metric-compare__value_2_of attempted"):
+        if takedowns_soup.find("span", "c-stat-metric-compare__value_2_of attempted").get_text(" ", strip=True) != "":
+            output["fighterB_takedowns_attempted"] = takedowns_soup.find("span", "c-stat-metric-compare__value_2_of attempted").get_text(" ", strip=True).replace("of ", "")
+        else:
+            output["fighterB_takedowns_attempted"] = 0
+    else:
+        output["fighterB_takedowns_attempted"] = 0
+
+    # submissions
+    submissions_soup = soup.find("div", class_="c-stat-metric-compare sub_attempts")
+    output["fighterA_submissions_attempted"] = submissions_soup.find("span", "c-stat-metric-compare__value c-stat-metric-compare__number").get_text(" ", strip=True)
+    output["fighterB_submissions_attempted"] = submissions_soup.find("span", "c-stat-metric-compare__value_2 c-stat-metric-compare__number").get_text(" ", strip=True)
+    
+    # knockdowns
+    knockdowns_soup = soup.find("div", class_="c-stat-metric-compare knockdowns")
+    output["fighterA_knockdowns"] = knockdowns_soup.find("span", "c-stat-metric-compare__value c-stat-metric-compare__number").get_text(" ", strip=True)
+    output["fighterB_knockdowns"] = knockdowns_soup.find("span", "c-stat-metric-compare__value_2 c-stat-metric-compare__number").get_text(" ", strip=True)
+    
+    return output
 
 def click_fight_buttons(driver):
     wait = WebDriverWait(driver, 15)
@@ -91,7 +150,6 @@ def click_fight_buttons(driver):
         (By.CSS_SELECTOR, "button.c-listing-fight__expand-button")
     ))
     buttons = driver.find_elements(By.CSS_SELECTOR, "button.c-listing-fight__expand-button")
-    print(f"Found {len(buttons)} fight buttons")
 
     for i in range(len(buttons)):
         # Re-find buttons each loop to avoid stale element errors
