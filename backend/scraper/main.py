@@ -7,21 +7,17 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 import time
 
-base_url = "https://www.ufc.com"
-
-
 # function to get all of the fight links from the main page
 def get_all_event_urls():
     output = []
-    response = requests.get(f"{base_url}/events")
-    soup = BeautifulSoup(response.text, "html.parser")
+    soup = click_through_events()
     h3_tags = soup.find_all("h3", class_="c-card-event--result__headline")
 
     for h3 in h3_tags:
         a_tag = h3.find("a")
         if a_tag and a_tag.has_attr("href"):
-            output.append(f"{base_url}/{a_tag["href"]}")
-            print(f"{base_url}/{a_tag["href"]}")
+            output.append(f"https://www.ufc.com/{a_tag["href"]}")
+            print(f"https://www.ufc.com/{a_tag["href"]}")
 
 # function to get event location and date time
 def get_event_info_dict(soup):
@@ -161,7 +157,7 @@ def get_all_event_fights_info_selenium(driver):
 
         # Click the button using JS (safe with overlays)
         driver.execute_script("arguments[0].click();", button)
-        print(f"✅ Clicked button {i + 1}/{len(buttons)}")
+        print(f"Clicked button {i + 1}/{len(buttons)}")
         
         time.sleep(5)
         html = driver.page_source
@@ -180,6 +176,47 @@ def get_all_event_fights_info_selenium(driver):
 
     return output
 
+def click_through_events():
+    driver = webdriver.Chrome()
+    wait = WebDriverWait(driver, 10)
+
+    driver.get("https://www.ufc.com/events")
+
+    # Click "Past" tab
+    past_tab = wait.until(
+        EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, 'li.horizontal-tab-button[data-horizontaltabbutton="1"] a')
+        )
+    )
+    driver.execute_script("arguments[0].click();", past_tab)
+    time.sleep(2)
+
+    html = None
+
+    while True:
+        try:
+            # Scroll to bottom so the button becomes clickable
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)
+
+            load_more = wait.until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, 'a.button[title="Load more items"]')
+                )
+            )
+
+            driver.execute_script("arguments[0].click();", load_more)
+            print("Clicked Load More")
+            time.sleep(2)
+
+        except:
+            print("No more Load More button")
+            break
+
+    html = driver.page_source
+    driver.quit()
+    return BeautifulSoup(html, "html.parser")
+
 def get_entire_event_information(url):
     output = {}
     driver = webdriver.Chrome()
@@ -188,6 +225,7 @@ def get_entire_event_information(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
+    output["url"] = url
     output["fights"] = get_all_event_fights_info_selenium(driver)
     output["event_info"] = get_event_info_dict(soup)
     driver.quit()
@@ -195,8 +233,5 @@ def get_entire_event_information(url):
 
     return output
 
-# driver = webdriver.Chrome()
-# driver.get("https://www.ufc.com/event/ufc-321")
-
-print(get_entire_event_information("https://www.ufc.com/event/ufc-321"))
-
+# print(get_entire_event_information("https://www.ufc.com/event/ufc-321"))
+get_all_event_urls()
