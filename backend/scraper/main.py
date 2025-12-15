@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 import time
+import os
 
 # function to get all of the fight links from the main page
 def get_all_event_urls():
@@ -18,6 +19,10 @@ def get_all_event_urls():
         if a_tag and a_tag.has_attr("href"):
             output.append(f"https://www.ufc.com/{a_tag["href"]}")
             print(f"https://www.ufc.com/{a_tag["href"]}")
+
+    os.makedirs("data", exist_ok=True)
+    with open("data/event_urls.json", "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=4)
 
 # function to get event location and date time
 def get_event_info_dict(soup):
