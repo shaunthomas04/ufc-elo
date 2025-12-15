@@ -48,39 +48,44 @@ def get_event_info_dict(soup):
 
     return output
 
-def get_fight_info(soup):
+def get_fight_info(soup, iframe_soup):
     output = {}
 
     # weight class
     weight_class_info = soup.find("div", class_="c-listing-fight__class-text")
-    output["weight_class"] = weight_class_info.get_text(" ", strip=True).split(" ")[0]
-
+    weight_class_text = weight_class_info.get_text(" ", strip=True)
+    if "Women" in weight_class_text:
+        output["weight_class"] = f"Women {weight_class_info.get_text(" ", strip=True).split(" ")[1]}"
+    else:
+        output["weight_class"] = f"Men {weight_class_info.get_text(" ", strip=True).split(" ")[0]}"
 
     # round, time, method
-    fight_round_info = soup.find("div", class_="e-t5 round")
-    fight_time_info = soup.find("div", class_="e-t5 time")
-    fight_method_info = soup.find("div", class_="e-t5 method")
+    fight_details_soup = iframe_soup.find("div", class_="c-matchup--results")
+    fight_round_info = fight_details_soup.find("h4", class_="e-t5 round")
+    fight_time_info = fight_details_soup.find("h4", class_="e-t5 time")
+    fight_method_info = fight_details_soup.find("h4", class_="e-t5 method")
     output["round"] = fight_round_info.get_text(" ", strip=True)
     output["time_in_round"] = fight_time_info.get_text(" ", strip=True)
     output["finish_method"] = fight_method_info.get_text(" ", strip=True)
 
+    # a fighter, b fighter
+    fighter_details_soup = soup.find("div", class_="details-content__header")
+    red_fighter_soup = fighter_details_soup.find("div", class_="details-content__name details-content__name--red")
+    blue_fighter_soup = fighter_details_soup.find("div", class_="details-content__name details-content__name--blue")
+    odds_details_soup = soup.find("div", class_="c-listing-fight__odds-wrapper")
+    fighter_odds_soup = odds_details_soup.find_all("span", class_="c-listing-fight__odds-amount")
 
-    # a fighter, b fighter, and weightclass
-    # names_and_weight_info = soup.find("div", class_="details-content__header")
+    # odds
+    output["fighterA"] = red_fighter_soup.get_text(" ", strip=True)
+    output["fighterB"] = blue_fighter_soup.get_text(" ", strip=True)
+    output["odds_fighterA"] = fighter_odds_soup[0].get_text(" ", strip=True)
+    output["odds_fighterB"] = fighter_odds_soup[1].get_text(" ", strip=True)
 
-    print(output)
+
     
-
-def selenium_fight_info(soup):
-    fight_buttons_clickable = soup.find_all("button", class_="c-listing-fight__expand-button")
-    print(len(fight_buttons_clickable))
-
-
-
 
 def click_fight_buttons(driver):
     wait = WebDriverWait(driver, 15)
-
     # Wait until buttons are present and get them
     wait.until(EC.presence_of_all_elements_located(
         (By.CSS_SELECTOR, "button.c-listing-fight__expand-button")
@@ -96,15 +101,21 @@ def click_fight_buttons(driver):
         # Click the button using JS (safe with overlays)
         driver.execute_script("arguments[0].click();", button)
         print(f"✅ Clicked button {i + 1}/{len(buttons)}")
+        
         time.sleep(5)
         html = driver.page_source
         soup = BeautifulSoup(html, "html.parser")
-        # matchup_info = soup.find_all("li", class_="l-listing__item")
-        # print(matchup_info[i].prettify())
-        # matchup_info = soup.find("div", class_="c-matchup--results")
-        # print(matchup_info.prettify())
+        matchup_info = soup.find_all("div", class_="c-listing-fight__content")
 
+        # get iframe for additional info
+        iframe = driver.find_element(By.CSS_SELECTOR, 'iframe[src^="/matchup/"]')
+        driver.switch_to.frame(iframe)
+        iframe_html = driver.page_source
+        iframe_soup = BeautifulSoup(iframe_html, "html.parser")
 
+        driver.switch_to.default_content()
+
+        get_fight_info(matchup_info[i], iframe_soup)
 
 driver = webdriver.Chrome()
 driver.get("https://www.ufc.com/event/ufc-321")
@@ -112,10 +123,3 @@ driver.get("https://www.ufc.com/event/ufc-321")
 click_fight_buttons(driver)
 
 driver.quit()
-
-# get_all_event_urls()
-event_url = "https://www.ufc.com//event/ufc-321"
-response = requests.get(event_url)
-soup = BeautifulSoup(response.text, "html.parser")
-selenium_fight_info(soup)
-# print(json.dumps(get_event_info_dict(soup), indent=4))
