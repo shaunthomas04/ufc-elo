@@ -10,6 +10,8 @@ import os
 import string
 import re
 import traceback
+from datetime import datetime
+import hashlib
 
 # function to get all of the fight links from the main page
 def get_all_event_urls():
@@ -290,6 +292,23 @@ def get_fighter_info(fighter_stats_url):
     output["record"] = record_soup.get_text(" ", strip=True)
     output["nickname"] = nickname
 
+    fighter_dimensions_soup = soup.find_all("li", class_="b-list__box-list-item b-list__box-list-item_type_block")
+    height_str = fighter_dimensions_soup[0].get_text(" ", strip=True)
+    height_in = int(re.search(r"(\d+)'\s*(\d+)", height_str).group(1)) * 12 + int(re.search(r"(\d+)'\s*(\d+)", height_str).group(2))
+    reach_str = fighter_dimensions_soup[2].get_text(" ", strip=True)
+    reach_in = int(re.search(r"(\d+)", reach_str).group(1))
+    dob_str = fighter_dimensions_soup[4].get_text(" ", strip=True)
+    dob = datetime.strptime(dob_str.replace("DOB:", "").strip(), "%b %d, %Y").date()
+    weight_str = fighter_dimensions_soup[1].get_text(" ", strip=True)
+    weight_lbs = int(re.search(r"\d+", weight_str).group())
+
+    output["height_in"] = height_in
+    output["weight_class"] = weight_lbs
+    output["reach_in"] = reach_in
+    output["birth_date"] = dob.strftime("%Y-%m-%d")
+
+    print(f"finished {fighter_stats_url}")
+
     return output
 
 
@@ -309,7 +328,8 @@ def save_scraped_fighter_info():
             fighter_info = get_fighter_info(url)
 
             raw_id = fighter_info["first_name"] + fighter_info["last_name"]
-            hashed_id = re.sub(r"[^a-zA-Z0-9]", "", raw_id).lower()
+            clean_id = re.sub(r"[^a-zA-Z0-9]", "", raw_id).lower()
+            hashed_id = hashlib.sha256(clean_id.encode("utf-8")).hexdigest()
 
             with open(f"data/fighter_info/{hashed_id}.json", "w", encoding="utf-8") as f:
                 json.dump(fighter_info, f, indent=4, ensure_ascii=False)
