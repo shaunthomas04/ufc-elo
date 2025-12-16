@@ -274,7 +274,6 @@ def get_all_fighter_urls():
 
 def get_fighter_info(fighter_stats_url):
     output = {}
-
     response = requests.get(fighter_stats_url)
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -292,20 +291,43 @@ def get_fighter_info(fighter_stats_url):
     output["record"] = record_soup.get_text(" ", strip=True)
     output["nickname"] = nickname
 
+    # fighter dimensions
     fighter_dimensions_soup = soup.find_all("li", class_="b-list__box-list-item b-list__box-list-item_type_block")
     height_str = fighter_dimensions_soup[0].get_text(" ", strip=True)
-    height_in = int(re.search(r"(\d+)'\s*(\d+)", height_str).group(1)) * 12 + int(re.search(r"(\d+)'\s*(\d+)", height_str).group(2))
     reach_str = fighter_dimensions_soup[2].get_text(" ", strip=True)
-    reach_in = int(re.search(r"(\d+)", reach_str).group(1))
     dob_str = fighter_dimensions_soup[4].get_text(" ", strip=True)
-    dob = datetime.strptime(dob_str.replace("DOB:", "").strip(), "%b %d, %Y").date()
     weight_str = fighter_dimensions_soup[1].get_text(" ", strip=True)
-    weight_lbs = int(re.search(r"\d+", weight_str).group())
 
-    output["height_in"] = height_in
-    output["weight_class"] = weight_lbs
-    output["reach_in"] = reach_in
-    output["birth_date"] = dob.strftime("%Y-%m-%d")
+    if height_str != "Height: --":
+        height_in = int(re.search(r"(\d+)'\s*(\d+)", height_str).group(1)) * 12 + int(re.search(r"(\d+)'\s*(\d+)", height_str).group(2))
+        output["height_in"] = height_in
+    else:
+        output["height_in"] = None
+
+    if reach_str != "Reach: --":
+        reach_in = int(re.search(r"(\d+)", reach_str).group(1))
+        output["reach_in"] = reach_in
+    else:
+        output["reach_in"] = None
+
+    if dob_str != "DOB: --":
+        dob = datetime.strptime(dob_str.replace("DOB:", "").strip(), "%b %d, %Y").date()
+        output["birth_date"] = dob.strftime("%Y-%m-%d")
+    else:
+            output["birth_date"] = None
+
+    if weight_str != "Weight: --":
+        weight_lbs = int(re.search(r"\d+", weight_str).group())
+        output["weight_class"] = weight_lbs
+    else:
+        output["weight_class"] = None
+
+    # other values
+    output["url"] = fighter_stats_url
+    raw_id = output["first_name"] + output["last_name"]
+    clean_id = re.sub(r"[^a-zA-Z0-9]", "", raw_id).lower()
+    hashed_id = hashlib.sha256(clean_id.encode("utf-8")).hexdigest()
+    output["fighter_id"] = hashed_id
 
     print(f"finished {fighter_stats_url}")
 
@@ -326,12 +348,7 @@ def save_scraped_fighter_info():
     for url in fighter_urls:
         try:
             fighter_info = get_fighter_info(url)
-
-            raw_id = fighter_info["first_name"] + fighter_info["last_name"]
-            clean_id = re.sub(r"[^a-zA-Z0-9]", "", raw_id).lower()
-            hashed_id = hashlib.sha256(clean_id.encode("utf-8")).hexdigest()
-
-            with open(f"data/fighter_info/{hashed_id}.json", "w", encoding="utf-8") as f:
+            with open(f"data/fighter_info/{fighter_info["fighter_id"]}.json", "w", encoding="utf-8") as f:
                 json.dump(fighter_info, f, indent=4, ensure_ascii=False)
 
 
@@ -358,3 +375,4 @@ def save_scraped_fighter_info():
     print(f"Failed URLs saved to data/failed/failed_fighters.json")
 
 save_scraped_fighter_info()
+# get_all_fighter_urls()
