@@ -3,12 +3,12 @@ USE UFC_ELO;
 
 -- Fighters table
 CREATE TABLE IF NOT EXISTS Fighters (
-    fighter_id VARCHAR(60) PRIMARY KEY,
+    fighter_id VARCHAR(128) PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     nickname VARCHAR(50),
     birth_date DATE,
-    country VARCHAR(50),
+    -- country VARCHAR(50),
     weight_class VARCHAR(20),
     height_in DECIMAL(5,2),
     reach_in DECIMAL(5,2),
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS Fighters (
 -- Fighter stats table, static not based on months
 CREATE TABLE IF NOT EXISTS FighterStats (
     stats_id INT AUTO_INCREMENT PRIMARY KEY,
-    fighter_id VARCHAR(60) NOT NULL,
+    fighter_id VARCHAR(128) NOT NULL,
     wins INT DEFAULT 0,
     losses INT DEFAULT 0,
     draws INT DEFAULT 0,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS FighterStats (
 -- Fighter Elo ratings table per date
 CREATE TABLE IF NOT EXISTS FighterElo (
     elo_id INT AUTO_INCREMENT PRIMARY KEY,
-    fighter_id VARCHAR(60) NOT NULL,
+    fighter_id VARCHAR(128) NOT NULL,
     elo_score DECIMAL(8,2) NOT NULL,
     rating_date DATE NOT NULL,
     FOREIGN KEY (fighter_id) REFERENCES Fighters(fighter_id)
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS Events (
     event_date DATE NOT NULL,
     venue VARCHAR(100),
     city VARCHAR(50),
-    country VARCHAR(50),
+    country VARCHAR(50)
     -- referee VARCHAR(100)
 );
 
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS Fights (
 CREATE TABLE IF NOT EXISTS FightStats (
     fight_stats_id INT AUTO_INCREMENT PRIMARY KEY,
     fight_id INT NOT NULL,
-    fighter_id VARCHAR(60) NOT NULL,
+    fighter_id VARCHAR(128) NOT NULL,
     strikes_landed INT DEFAULT 0,
     strikes_attempted INT DEFAULT 0,
     takedowns_landed INT DEFAULT 0,
