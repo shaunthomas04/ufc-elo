@@ -25,21 +25,20 @@ export const HomePage: React.FC = () => {
 
   const filteredFighters = useMemo(() => {
     if (!searchQuery) return currentFighters;
-    return currentFighters.filter(f => 
+    return currentFighters.filter(f =>
       f.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [currentFighters, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="app-container">
       <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="main-content">
         <MonthSelector
           monthOptions={monthOptions}
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
-          fighterCount={filteredFighters.length}
         />
 
         <WeightClassTabs
@@ -59,3 +58,4 @@ export const HomePage: React.FC = () => {
     </div>
   );
 };
+

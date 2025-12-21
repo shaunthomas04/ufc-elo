@@ -1,3 +1,4 @@
+/*
 * {
   margin: 0;
   padding: 0;
@@ -5,14 +6,394 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #000;
+  color: #fff;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+}
+
+.app-container {
+  min-height: 100vh;
+  background: #000;
+}
+
+/* Header Styles */
+.app-header {
+  background: #000;
+  border-bottom: 1px solid #1a1a1a;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-text {
+  font-size: 32px;
+  font-weight: 900;
+  color: #d20a0a;
+  letter-spacing: -1px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding-left: 12px;
+  border-left: 2px solid #d20a0a;
+}
+
+.header-search {
+  position: relative;
+  width: 300px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  border-color: #d20a0a;
+  background: #0a0a0a;
+}
+
+.search-input::placeholder {
+  color: #666;
+}
+
+/* Main Content */
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* Month Selector */
+.month-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  padding: 16px;
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 4px;
+}
+
+.month-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.month-select {
+  padding: 8px 32px 8px 12px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.month-select:hover {
+  border-color: #d20a0a;
+}
+
+/* Weight Class Tabs */
+.weight-class-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.weight-class-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.weight-class-tabs::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.weight-class-tabs::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 2px;
+}
+
+.tab-button {
+  padding: 12px 24px;
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 4px;
+  color: #999;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.tab-button.active {
+  background: #d20a0a;
+  border-color: #d20a0a;
+  color: #fff;
+}
+
+/* Rankings Container */
+.rankings-container {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rankings-header {
+  padding: 24px;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.rankings-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+}
+
+.rankings-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.rankings-table {
+  padding: 0;
+}
+
+.fighters-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fighter Row */
+.fighter-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 120px;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #1a1a1a;
+  transition: background 0.2s;
+}
+
+.fighter-row:hover {
+  background: #0f0f0f;
+}
+
+.fighter-row:last-child {
+  border-bottom: none;
+}
+
+.fighter-rank {
+  font-size: 18px;
+  font-weight: 900;
+  color: #666;
+}
+
+.fighter-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fighter-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #1a1a1a;
+  object-fit: cover;
+}
+
+.fighter-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.fighter-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fighter-division {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.fighter-elo {
+  font-size: 20px;
+  font-weight: 900;
+  color: #d20a0a;
+  text-align: right;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.clear-button {
+  padding: 12px 24px;
+  background: #d20a0a;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-button:hover {
+  background: #a00808;
+}
+
+/* Footer */
+.app-footer {
+  background: #000;
+  border-top: 1px solid #1a1a1a;
+  padding: 40px 24px;
+  margin-top: 80px;
+}
+
+.footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footer-content p {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.footer-note {
+  font-size: 12px;
+  color: #444;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    height: auto;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .header-search {
+    width: 100%;
+  }
+
+  .main-content {
+    padding: 24px 16px;
+  }
+
+  .fighter-row {
+    grid-template-columns: 40px 1fr 100px;
+    padding: 12px 16px;
+  }
+
+  .fighter-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .fighter-name {
+    font-size: 14px;
+  }
+
+  .fighter-elo {
+    font-size: 16px;
+  }
+
+  .rankings-title {
+    font-size: 22px;
+  }
+
+  .tab-button {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
 }
