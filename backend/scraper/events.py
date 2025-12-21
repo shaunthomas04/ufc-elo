@@ -10,6 +10,7 @@ import time
 import os
 import traceback
 import re
+import random
 
 # function to get all of the fight links from the main page
 def get_all_event_urls():
@@ -54,6 +55,14 @@ def get_event_info_dict(soup):
 
 # function to get all fight info including stats from both fighters
 def get_fight_info(soup, iframe_soup):
+    print(f"Soup: {iframe_soup.prettify()}")
+    os.makedirs("data/debug/html", exist_ok=True)
+
+    # generate a random filename to save html
+    filename = f"data/debug/html/{random.randint(100000, 999999)}.html"
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(iframe_soup.prettify())
+    
     output = {}
 
     # weight class
@@ -169,7 +178,7 @@ def get_all_event_fights_info_selenium(driver):
         driver.execute_script("arguments[0].click();", button)
         # print(f"Clicked button {i + 1}/{len(buttons)}")
         
-        time.sleep(5)
+        time.sleep(20)
         html = driver.page_source
         soup = BeautifulSoup(html, "html.parser")
         matchup_info = soup.find_all("div", class_="c-listing-fight__content")
@@ -234,9 +243,9 @@ def get_entire_event_information(url):
 
     # Set up headless Chrome driver
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  
-    chrome_options.add_argument("--disable-gpu")  
-    chrome_options.add_argument("--no-sandbox") 
+    # chrome_options.add_argument("--headless")  
+    # chrome_options.add_argument("--disable-gpu")  
+    # chrome_options.add_argument("--no-sandbox") 
 
     driver = webdriver.Chrome(options=chrome_options)
     driver.get(url)
@@ -252,8 +261,8 @@ def get_entire_event_information(url):
 
     return output
 
-# function that saves valid fighter json locally and logs failed fighter info
-def save_scraped_fighter_info():
+# function that saves valid event json locally and logs failed events info
+def save_scraped_events_info():
     # Load remaining fighter URLs
     with open("data/event_urls.json", "r") as f:
         event_urls = json.load(f)
@@ -302,4 +311,6 @@ def save_scraped_fighter_info():
     print(f"Failed URLs saved to data/failed/failed_events.json")
 
 
-save_scraped_fighter_info()
+save_scraped_events_info()
+
+# get_entire_event_information("https://www.ufc.com//event/ufc-323")
