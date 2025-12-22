@@ -10,6 +10,8 @@ import unicodedata
 import re
 import hashlib
 from unidecode import unidecode
+import random
+from datetime import datetime, timedelta
 
 # Load environment variables
 load_dotenv()
@@ -119,6 +121,60 @@ def upload_fighters_sql():
             json.dump(failed_fighters_upload, f, indent=4)
         print(f"Saved {len(failed_fighters_upload)} failed uploads to {failed_file_path}")
 
+# helper function to find attempted number of strikes
+def calculate_strikes_attempted(strikes_landed, strikes_percent):
+    try:
+        if strikes_percent is None or strikes_percent == "":
+            return int(strikes_landed)
+        percent = float(re.sub(r"[()%]", "", str(strikes_percent))) / 100
+        if percent == 0:
+            return int(strikes_landed)
+        return round(int(strikes_landed) / percent)
+    except Exception as e:
+        print(f"Error calculating strikes_attempted: strikes_landed={strikes_landed}, strikes_percent={strikes_percent}, error={e}")
+        return int(strikes_landed)
+
+def normalize_and_hash_name(text):
+    # Normalize unicode (Błachowicz → Blachowicz)
+    text = unidecode(text)
+    text = re.sub(r"[^a-zA-Z0-9]", "", text)
+    text = text.lower()
+
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+def safe_int(value, default=0):
+    """Convert value to int safely, stripping non-digit characters."""
+    if value is None:
+        return default
+    # Remove everything except digits
+    cleaned = re.sub(r"[^\d]", "", str(value))
+    return int(cleaned) if cleaned else default
+
+
+
+# get all fighter json from local scraped data
+def get_all_raw_event_json():
+    directory = Path("data/event_info")
+    json_objects = []
+
+    for file_path in directory.glob("*.json"):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                json_objects.append(json.load(f))
+        except json.JSONDecodeError as e:
+            print(f"Skipping {file_path}: {e}")
+
+    return json_objects
+
+# Generate a random date in the past 5 years for placeholder data
+def generate_placeholder_date():
+    start_date = datetime.now() - timedelta(days=5*365)
+    random_days = random.randint(0, 5*365)
+    random_date = start_date + timedelta(days=random_days)
+    return random_date.date()  
+
+
+# TODO THIS NEEDS TO BE FIXED!! need to build new scraper to attach event date info from another source :(
 
 # uploads a raw json file into sql db
 def upload_event_to_sql(conn, event_json):
@@ -130,7 +186,8 @@ def upload_event_to_sql(conn, event_json):
         cursor.callproc('AddEvent', [
             event_id,
             event_json["event_name"],
-            event_json["event_date"],
+            # event_json["event_date"],
+            generate_placeholder_date(),
             event_json["venue"],
             event_json["city"],
             event_json["country"]
@@ -140,35 +197,7 @@ def upload_event_to_sql(conn, event_json):
     finally:
         cursor.close()
 
-# uploads all fights from an event into sql db
-# {
-#             "weight_class": "Men Bantamweight",
-#             "round": "5",
-#             "time_in_round": "5:00",
-#             "finish_method": "Decision - Unanimous",
-#             "fighterA": "Merab Dvalishvili",
-#             "fighterB": "Petr Yan",
-#             "odds_fighterA": "-485",
-#             "odds_fighterB": "+370",
-#             "winner": "Petr Yan",
-#             "fight_stats": {
-#                 "fighterA_strikes_landed": "196",
-#                 "fighterB_strikes_landed": "159",
-#                 "fighterA_strikes_percent": "(43%)",
-#                 "fighterB_strikes_percent": "(63%)",
-#                 "fighterA_significant_strikes": "134",
-#                 "fighterB_significant_strikes": "139",
-#                 "fighterA_takedowns_landed": "2",
-#                 "fighterB_takedowns_landed": "5",
-#                 "fighterA_takedowns_attempted": "29",
-#                 "fighterB_takedowns_attempted": "9",
-#                 "fighterA_submissions_attempted": "2",
-#                 "fighterB_submissions_attempted": "0",
-#                 "fighterA_knockdowns": "0",
-#                 "fighterB_knockdowns": "0"
-#             }
-
-
+# uploads fights to sql db 
 def upload_fight_to_sql(conn, fight_json, event_name):
     fight_id = hashlib.sha256(fight_json["fighterA"].encode("utf-8") + fight_json["fighterB"].encode("utf-8") + event_name.encode("utf-8")).hexdigest()
     event_id = hashlib.sha256(event_name.encode("utf-8")).hexdigest()
@@ -194,28 +223,31 @@ def upload_fight_to_sql(conn, fight_json, event_name):
         ])
         conn.commit()
         print(f"Fight {fight_id} inserted successfully!")
+
+        upload_fight_stats_to_sql(conn, fight_json["fight_stats"], fight_id, fighterA_id, True)
+        upload_fight_stats_to_sql(conn, fight_json["fight_stats"], fight_id, fighterB_id, False)
+
     finally:
         cursor.close()
 
-
+# uploads either fighter a or b's stats into sql
 def upload_fight_stats_to_sql(conn, fight_stats, fight_id, fighter_id, isFighterA):
     if isFighterA:
-        s_landed = fight_stats["fighterA_strikes_landed"]
-        s_attempt = calculate_strikes_attempted(s_landed, fight_stats["fighterA_strikes_percent"])
-        t_landed = fight_stats["fighterA_takedowns_landed"]
-        t_attempt = fight_stats["fighterA_takedowns_attempted"]
-        subs = fight_stats["fighterA_submissions_attempted"]
-        knockdowns = fight_stats["fighterA_knockdowns"]
-    
+        s_landed = safe_int(fight_stats["fighterA_strikes_landed"])
+        s_attempt = safe_int(calculate_strikes_attempted(s_landed, fight_stats["fighterA_strikes_percent"]))
+        t_landed = safe_int(fight_stats["fighterA_takedowns_landed"])
+        t_attempt = safe_int(fight_stats["fighterA_takedowns_attempted"])
+        subs = safe_int(fight_stats["fighterA_submissions_attempted"])
+        knockdowns = safe_int(fight_stats["fighterA_knockdowns"])
     else:
-        s_landed = fight_stats["fighterB_strikes_landed"]
-        s_attempt = calculate_strikes_attempted(s_landed, fight_stats["fighterB_strikes_percent"])
-        t_landed = fight_stats["fighterB_takedowns_landed"]
-        t_attempt = fight_stats["fighterB_takedowns_attempted"]
-        subs = fight_stats["fighterB_submissions_attempted"]
-        knockdowns = fight_stats["fighterB_knockdowns"]
-    
-    
+        s_landed = safe_int(fight_stats["fighterB_strikes_landed"])
+        s_attempt = safe_int(calculate_strikes_attempted(s_landed, fight_stats["fighterB_strikes_percent"]))
+        t_landed = safe_int(fight_stats["fighterB_takedowns_landed"])
+        t_attempt = safe_int(fight_stats["fighterB_takedowns_attempted"])
+        subs = safe_int(fight_stats["fighterB_submissions_attempted"])
+        knockdowns = safe_int(fight_stats["fighterB_knockdowns"])
+
+
     cursor = conn.cursor()
         
     try:
@@ -233,24 +265,51 @@ def upload_fight_stats_to_sql(conn, fight_stats, fight_id, fighter_id, isFighter
     finally:
         cursor.close()
 
+# uploads all local data event info into sql
+def upload_all_events_with_fights():
+    all_events_json = get_all_raw_event_json()
+    failed_events_upload = []
 
-def calculate_strikes_attempted(strikes_landed, strikes_percent):
-    # Remove parentheses and % and convert to float fraction
-    percent = float(re.sub(r"[()%]", "", strikes_percent)) / 100
-    if percent == 0:  # avoid division by zero
-        return strikes_landed
-    return round(strikes_landed / percent)
+    try:
+        conn = mysql.connector.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASS,
+            database=DB_NAME
+        )
 
-def normalize_and_hash_name(text):
-    # Normalize unicode (Błachowicz → Blachowicz)
-    text = unidecode(text)
-    text = re.sub(r"[^a-zA-Z0-9]", "", text)
-    text = text.lower()
+        for event_data in all_events_json:
 
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+            event_name = event_data["event_info"]["event_name"]
+            try:
+                upload_event_to_sql(conn, event_data["event_info"])
+                fights = event_data["fights"]
+                event_name = event_data["event_info"]["event_name"]
+         
+                for fight in fights:
+                    upload_fight_to_sql(conn, fight, event_name)
+       
+            except Exception as e:
+                print(f"Failed to upload {event_name}: {e}")
+                failed_events_upload.append({
+                    "event_name": event_name,
+                    "error": str(e)
+                })
+
+    except mysql.connector.Error as err:
+        print(f"Database connection error: {err}")
+    finally:
+        if conn:
+            conn.close()
+
+    # Save failed uploads to a JSON file
+    if failed_events_upload:
+        os.makedirs("data/failed", exist_ok=True)
+        failed_file_path = "data/failed/failed_event_uploads.json"
+        with open(failed_file_path, "w", encoding="utf-8") as f:
+            json.dump(failed_events_upload, f, indent=4)
+        print(f"Saved {len(failed_events_upload)} failed uploads to {failed_file_path}")
 
 
-
-
-
-# upload_fighters_sql()
+upload_fighters_sql()
+upload_all_events_with_fights()

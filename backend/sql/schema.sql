@@ -4,13 +4,13 @@ USE UFC_ELO;
 -- Fighters table
 -- This will come straight from scraped data
 CREATE TABLE IF NOT EXISTS Fighters (
-    fighter_id VARCHAR(128) PRIMARY KEY,  -- increased to 128
+    fighter_id VARCHAR(128) PRIMARY KEY, 
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     nickname VARCHAR(50),
     birth_date DATE,
     -- country VARCHAR(50),
-    weight_class VARCHAR(20),
+    weight_class VARCHAR(100),
     height_in DECIMAL(5,2),
     reach_in DECIMAL(5,2),
     url VARCHAR(255)
@@ -70,9 +70,9 @@ CREATE TABLE IF NOT EXISTS Fights (
     finish_method VARCHAR(50),
     round INT,
     time_in_round TIME,
-    weight_class VARCHAR(20),
-    odds_fighterA DECIMAL(5,2),            
-    odds_fighterB DECIMAL(5,2),        
+    weight_class VARCHAR(100),
+    odds_fighterA VARCHAR(10),            
+    odds_fighterB VARCHAR(10),        
     FOREIGN KEY (event_id) REFERENCES Events(event_id) ON DELETE CASCADE,
     FOREIGN KEY (fighterA_id) REFERENCES Fighters(fighter_id) ON DELETE CASCADE,
     FOREIGN KEY (fighterB_id) REFERENCES Fighters(fighter_id) ON DELETE CASCADE,

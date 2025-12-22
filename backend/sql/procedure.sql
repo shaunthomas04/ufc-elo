@@ -9,7 +9,7 @@ CREATE PROCEDURE AddFighter(
     IN p_last VARCHAR(50),
     IN p_nick VARCHAR(50),
     IN p_birth DATE,
-    IN p_weight VARCHAR(20),
+    IN p_weight VARCHAR(100),
     IN p_height DECIMAL(5,2),
     IN p_reach DECIMAL(5,2),
     IN p_url VARCHAR(255)
@@ -61,9 +61,9 @@ CREATE PROCEDURE AddFight(
     IN p_finish VARCHAR(50),
     IN p_round INT,
     IN p_time TIME,
-    IN p_weight VARCHAR(20),
-    IN p_oddsA DECIMAL(5,2),
-    IN p_oddsB DECIMAL(5,2)
+    IN p_weight VARCHAR(100),
+    IN p_oddsA VARCHAR(10),
+    IN p_oddsB VARCHAR(10)
 )
 BEGIN
     INSERT INTO Fights (
@@ -197,7 +197,7 @@ DELIMITER //
 CREATE PROCEDURE GetDivisionRankings(
     IN p_year INT,
     IN p_month INT,
-    IN p_weight VARCHAR(20)
+    IN p_weight VARCHAR(100)
 )
 BEGIN
     SELECT f.fighter_id, f.first_name, f.last_name, e.elo_score
