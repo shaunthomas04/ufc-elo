@@ -116,6 +116,22 @@ def upload_fighters_sql():
         print(f"Saved {len(failed_fighters_upload)} failed uploads to {failed_file_path}")
 
 
+# uploads a raw json file into sql db
+def upload_event_json_to_sql(conn, event_json):
 
+    cursor = conn.cursor()
+        
+    try:
+        cursor.callproc('AddEvent', [
+            event_json["event_name"],
+            event_json["event_date"],
+            event_json["venue"],
+            event_json["city"],
+            event_json["country"]
+        ])
+        conn.commit()
+        print(f"Event {event_json['event_name']} inserted successfully!")
+    finally:
+        cursor.close()
 
 # upload_fighters_sql()
