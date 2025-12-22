@@ -2,8 +2,9 @@ CREATE DATABASE IF NOT EXISTS UFC_ELO;
 USE UFC_ELO;
 
 -- Fighters table
+-- This will come straight from scraped data
 CREATE TABLE IF NOT EXISTS Fighters (
-    fighter_id VARCHAR(128) PRIMARY KEY,
+    fighter_id VARCHAR(128) PRIMARY KEY,  -- increased to 128
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     nickname VARCHAR(50),
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS Fighters (
 );
 
 -- Fighter stats table, static not based on months
+-- This will be aggregated over time from other data
 CREATE TABLE IF NOT EXISTS FighterStats (
     stats_id INT AUTO_INCREMENT PRIMARY KEY,
     fighter_id VARCHAR(128) NOT NULL,
@@ -34,6 +36,7 @@ CREATE TABLE IF NOT EXISTS FighterStats (
 );
 
 -- Fighter Elo ratings table per date
+-- This will be calculated and aggregated over time
 CREATE TABLE IF NOT EXISTS FighterElo (
     elo_id INT AUTO_INCREMENT PRIMARY KEY,
     fighter_id VARCHAR(128) NOT NULL,
@@ -45,8 +48,9 @@ CREATE TABLE IF NOT EXISTS FighterElo (
 );
 
 -- Events table
+-- This will be uploaded from scraped data
 CREATE TABLE IF NOT EXISTS Events (
-    event_id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id VARCHAR(128) PRIMARY KEY, 
     event_name VARCHAR(100) NOT NULL,
     event_date DATE NOT NULL,
     venue VARCHAR(100),
@@ -56,18 +60,19 @@ CREATE TABLE IF NOT EXISTS Events (
 );
 
 -- Fights table links to an event as well as both fighters
+-- This will be uploaded from events scraped data
 CREATE TABLE IF NOT EXISTS Fights (
-    fight_id INT AUTO_INCREMENT PRIMARY KEY,
-    event_id INT NOT NULL,
-    fighterA_id VARCHAR(60) NOT NULL,
-    fighterB_id VARCHAR(60) NOT NULL,
-    winner_id VARCHAR(60),
+    fight_id VARCHAR(128) PRIMARY KEY,  
+    event_id VARCHAR(128) NOT NULL,         
+    fighterA_id VARCHAR(128) NOT NULL,      
+    fighterB_id VARCHAR(128) NOT NULL,      
+    winner_id VARCHAR(128),
     finish_method VARCHAR(50),
     round INT,
     time_in_round TIME,
     weight_class VARCHAR(20),
-    odds_fighterA INT,
-    odds_fighterB INT,
+    odds_fighterA DECIMAL(5,2),            
+    odds_fighterB DECIMAL(5,2),        
     FOREIGN KEY (event_id) REFERENCES Events(event_id) ON DELETE CASCADE,
     FOREIGN KEY (fighterA_id) REFERENCES Fighters(fighter_id) ON DELETE CASCADE,
     FOREIGN KEY (fighterB_id) REFERENCES Fighters(fighter_id) ON DELETE CASCADE,
@@ -75,10 +80,11 @@ CREATE TABLE IF NOT EXISTS Fights (
 );
 
 -- Fight stats table per fighter
+-- This will be uploaded from scraped data
 CREATE TABLE IF NOT EXISTS FightStats (
     fight_stats_id INT AUTO_INCREMENT PRIMARY KEY,
-    fight_id INT NOT NULL,
-    fighter_id VARCHAR(128) NOT NULL,
+    fight_id VARCHAR(128) NOT NULL,        
+    fighter_id VARCHAR(128) NOT NULL,     
     strikes_landed INT DEFAULT 0,
     strikes_attempted INT DEFAULT 0,
     takedowns_landed INT DEFAULT 0,

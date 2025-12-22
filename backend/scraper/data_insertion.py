@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 import unicodedata
 import json
 from pathlib import Path
+import unicodedata
+import re
+import hashlib
+from unidecode import unidecode
 
 # Load environment variables
 load_dotenv()
@@ -117,12 +121,14 @@ def upload_fighters_sql():
 
 
 # uploads a raw json file into sql db
-def upload_event_json_to_sql(conn, event_json):
+def upload_event_to_sql(conn, event_json):
+    event_id = hashlib.sha256(event_json["event_name"].encode("utf-8")).hexdigest()
 
     cursor = conn.cursor()
         
     try:
         cursor.callproc('AddEvent', [
+            event_id,
             event_json["event_name"],
             event_json["event_date"],
             event_json["venue"],
@@ -133,5 +139,118 @@ def upload_event_json_to_sql(conn, event_json):
         print(f"Event {event_json['event_name']} inserted successfully!")
     finally:
         cursor.close()
+
+# uploads all fights from an event into sql db
+# {
+#             "weight_class": "Men Bantamweight",
+#             "round": "5",
+#             "time_in_round": "5:00",
+#             "finish_method": "Decision - Unanimous",
+#             "fighterA": "Merab Dvalishvili",
+#             "fighterB": "Petr Yan",
+#             "odds_fighterA": "-485",
+#             "odds_fighterB": "+370",
+#             "winner": "Petr Yan",
+#             "fight_stats": {
+#                 "fighterA_strikes_landed": "196",
+#                 "fighterB_strikes_landed": "159",
+#                 "fighterA_strikes_percent": "(43%)",
+#                 "fighterB_strikes_percent": "(63%)",
+#                 "fighterA_significant_strikes": "134",
+#                 "fighterB_significant_strikes": "139",
+#                 "fighterA_takedowns_landed": "2",
+#                 "fighterB_takedowns_landed": "5",
+#                 "fighterA_takedowns_attempted": "29",
+#                 "fighterB_takedowns_attempted": "9",
+#                 "fighterA_submissions_attempted": "2",
+#                 "fighterB_submissions_attempted": "0",
+#                 "fighterA_knockdowns": "0",
+#                 "fighterB_knockdowns": "0"
+#             }
+
+
+def upload_fight_to_sql(conn, fight_json, event_name):
+    fight_id = hashlib.sha256(fight_json["fighterA"].encode("utf-8") + fight_json["fighterB"].encode("utf-8") + event_name.encode("utf-8")).hexdigest()
+    event_id = hashlib.sha256(event_name.encode("utf-8")).hexdigest()
+    fighterA_id = normalize_and_hash_name(fight_json["fighterA"])
+    fighterB_id = normalize_and_hash_name(fight_json["fighterB"])
+    winner_id = normalize_and_hash_name(fight_json["winner"])
+
+    cursor = conn.cursor()
+        
+    try:
+        cursor.callproc('AddFight', [
+            fight_id,
+            event_id,
+            fighterA_id,
+            fighterB_id,
+            winner_id,
+            fight_json["finish_method"],
+            fight_json["round"],
+            fight_json["time_in_round"],
+            fight_json["weight_class"],
+            fight_json["odds_fighterA"],
+            fight_json["odds_fighterB"]
+        ])
+        conn.commit()
+        print(f"Fight {fight_id} inserted successfully!")
+    finally:
+        cursor.close()
+
+
+def upload_fight_stats_to_sql(conn, fight_stats, fight_id, fighter_id, isFighterA):
+    if isFighterA:
+        s_landed = fight_stats["fighterA_strikes_landed"]
+        s_attempt = calculate_strikes_attempted(s_landed, fight_stats["fighterA_strikes_percent"])
+        t_landed = fight_stats["fighterA_takedowns_landed"]
+        t_attempt = fight_stats["fighterA_takedowns_attempted"]
+        subs = fight_stats["fighterA_submissions_attempted"]
+        knockdowns = fight_stats["fighterA_knockdowns"]
+    
+    else:
+        s_landed = fight_stats["fighterB_strikes_landed"]
+        s_attempt = calculate_strikes_attempted(s_landed, fight_stats["fighterB_strikes_percent"])
+        t_landed = fight_stats["fighterB_takedowns_landed"]
+        t_attempt = fight_stats["fighterB_takedowns_attempted"]
+        subs = fight_stats["fighterB_submissions_attempted"]
+        knockdowns = fight_stats["fighterB_knockdowns"]
+    
+    
+    cursor = conn.cursor()
+        
+    try:
+        cursor.callproc('AddFightStats', [
+            fight_id,
+            fighter_id,
+            s_landed,
+            s_attempt,
+            t_landed,
+            t_attempt,
+            subs,
+            knockdowns,
+        ])
+        conn.commit()
+    finally:
+        cursor.close()
+
+
+def calculate_strikes_attempted(strikes_landed, strikes_percent):
+    # Remove parentheses and % and convert to float fraction
+    percent = float(re.sub(r"[()%]", "", strikes_percent)) / 100
+    if percent == 0:  # avoid division by zero
+        return strikes_landed
+    return round(strikes_landed / percent)
+
+def normalize_and_hash_name(text):
+    # Normalize unicode (Błachowicz → Blachowicz)
+    text = unidecode(text)
+    text = re.sub(r"[^a-zA-Z0-9]", "", text)
+    text = text.lower()
+
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+
+
 
 # upload_fighters_sql()

@@ -1,4 +1,3 @@
-
 -- ======================
 -- Add fighter procedure
 -- ======================
@@ -33,6 +32,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS AddEvent;
 DELIMITER //
 CREATE PROCEDURE AddEvent(
+    IN p_event_id VARCHAR(128),
     IN p_name VARCHAR(100),
     IN p_date DATE,
     IN p_venue VARCHAR(100),
@@ -40,8 +40,10 @@ CREATE PROCEDURE AddEvent(
     IN p_country VARCHAR(50)
 )
 BEGIN
-    INSERT INTO Events (event_name, event_date, venue, city, country)
-    VALUES (p_name, p_date, p_venue, p_city, p_country);
+    INSERT INTO Events (
+        event_id, event_name, event_date, venue, city, country
+    )
+    VALUES (p_event_id, p_name, p_date, p_venue, p_city, p_country);
 END//
 DELIMITER ;
 
@@ -51,7 +53,8 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS AddFight;
 DELIMITER //
 CREATE PROCEDURE AddFight(
-    IN p_event INT,
+    IN p_fight_id VARCHAR(128),
+    IN p_event_id VARCHAR(128),
     IN p_A VARCHAR(128),
     IN p_B VARCHAR(128),
     IN p_winner VARCHAR(128),
@@ -59,19 +62,35 @@ CREATE PROCEDURE AddFight(
     IN p_round INT,
     IN p_time TIME,
     IN p_weight VARCHAR(20),
-    IN p_oddsA INT,
-    IN p_oddsB INT
+    IN p_oddsA DECIMAL(5,2),
+    IN p_oddsB DECIMAL(5,2)
 )
 BEGIN
     INSERT INTO Fights (
-        event_id, fighterA_id, fighterB_id, winner_id,
-        finish_method, round, time_in_round,
-        weight_class, odds_fighterA, odds_fighterB
+        fight_id,
+        event_id,
+        fighterA_id,
+        fighterB_id,
+        winner_id,
+        finish_method,
+        round,
+        time_in_round,
+        weight_class,
+        odds_fighterA,
+        odds_fighterB
     )
     VALUES (
-        p_event, p_A, p_B, p_winner,
-        p_finish, p_round, p_time,
-        p_weight, p_oddsA, p_oddsB
+        p_fight_id,
+        p_event_id,
+        p_A,
+        p_B,
+        p_winner,
+        p_finish,
+        p_round,
+        p_time,
+        p_weight,
+        p_oddsA,
+        p_oddsB
     );
 END//
 DELIMITER ;
@@ -82,7 +101,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS AddFightStats;
 DELIMITER //
 CREATE PROCEDURE AddFightStats(
-    IN p_fight INT,
+    IN p_fight VARCHAR(128),
     IN p_fighter VARCHAR(128),
     IN s_landed INT,
     IN s_attempt INT,
@@ -196,7 +215,7 @@ DELIMITER ;
 -- ======================
 DROP PROCEDURE IF EXISTS GetEventDetails;
 DELIMITER //
-CREATE PROCEDURE GetEventDetails(IN p_event INT)
+CREATE PROCEDURE GetEventDetails(IN p_event VARCHAR(128))
 BEGIN
     SELECT * FROM Events WHERE event_id = p_event;
 END//
@@ -207,7 +226,7 @@ DELIMITER ;
 -- ======================
 DROP PROCEDURE IF EXISTS GetFightsByEvent;
 DELIMITER //
-CREATE PROCEDURE GetFightsByEvent(IN p_event INT)
+CREATE PROCEDURE GetFightsByEvent(IN p_event VARCHAR(128))
 BEGIN
     SELECT * FROM Fights
     WHERE event_id = p_event
@@ -220,7 +239,7 @@ DELIMITER ;
 -- ======================
 DROP PROCEDURE IF EXISTS GetFightStats;
 DELIMITER //
-CREATE PROCEDURE GetFightStats(IN p_fight INT)
+CREATE PROCEDURE GetFightStats(IN p_fight VARCHAR(128))
 BEGIN
     SELECT * FROM FightStats WHERE fight_id = p_fight;
 END//
