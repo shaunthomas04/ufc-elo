@@ -311,5 +311,106 @@ def upload_all_events_with_fights():
         print(f"Saved {len(failed_events_upload)} failed uploads to {failed_file_path}")
 
 
-upload_fighters_sql()
-upload_all_events_with_fights()
+# upload_fighters_sql()
+# upload_all_events_with_fights()
+
+
+# function that goes through all fighters and aggregates their career stats
+def generate_fighter_stats():
+
+    try:
+        conn = mysql.connector.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASS,
+            database=DB_NAME
+        )
+        
+        cursor = conn.cursor(dictionary=True)
+
+        # 1. Get all fighters
+        cursor.execute("SELECT fighter_id FROM Fighters")
+        fighters = cursor.fetchall()
+
+        for fighter in fighters:
+            fighter_id = fighter["fighter_id"]
+
+            # 2. Aggregate fight-level stats
+            cursor.execute("""
+                SELECT fs.*, f.winner_id, f.finish_method
+                FROM FightStats fs
+                JOIN Fights f ON f.fight_id = fs.fight_id
+                WHERE fs.fighter_id = %s
+            """, (fighter_id,))
+            fights = cursor.fetchall()
+
+            # accumulators
+            total_wins = total_losses = total_draws = 0
+            ko_wins = sub_wins = decision_wins = 0
+            strikes_landed = strikes_attempted = 0
+            takedowns_landed = takedowns_attempted = 0
+            submissions_attempted = knockdowns = 0
+
+            for fight in fights:
+                # Fight stats sums
+                strikes_landed += int(fight.get("strikes_landed", 0) or 0)
+                strikes_attempted += int(fight.get("strikes_attempted", 0) or 0)
+                takedowns_landed += int(fight.get("takedowns_landed", 0) or 0)
+                takedowns_attempted += int(fight.get("takedowns_attempted", 0) or 0)
+                submissions_attempted += int(fight.get("submissions_attempted", 0) or 0)
+                knockdowns += int(fight.get("knockdowns", 0) or 0)
+
+                # Wins / losses / draws
+                winner_id = fight.get("winner_id")
+                finish_method = fight.get("finish_method") or ""
+
+                if winner_id == fighter_id:
+                    total_wins += 1
+                    if "KO" in finish_method.upper():
+                        ko_wins += 1
+                    elif "SUB" in finish_method.upper():
+                        sub_wins += 1
+                    else:
+                        decision_wins += 1
+                elif winner_id is None:
+                    total_draws += 1
+                else:
+                    total_losses += 1
+
+            # 3. Insert or update FighterStats
+            cursor.execute("""
+                INSERT INTO FighterStats (
+                    fighter_id, wins, losses, draws,
+                    ko_wins, sub_wins, decision_wins,
+                    strikes_landed, strikes_attempted,
+                    takedowns_landed, takedowns_attempted
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    wins = VALUES(wins),
+                    losses = VALUES(losses),
+                    draws = VALUES(draws),
+                    ko_wins = VALUES(ko_wins),
+                    sub_wins = VALUES(sub_wins),
+                    decision_wins = VALUES(decision_wins),
+                    strikes_landed = VALUES(strikes_landed),
+                    strikes_attempted = VALUES(strikes_attempted),
+                    takedowns_landed = VALUES(takedowns_landed),
+                    takedowns_attempted = VALUES(takedowns_attempted)
+            """, (
+                fighter_id, total_wins, total_losses, total_draws,
+                ko_wins, sub_wins, decision_wins,
+                strikes_landed, strikes_attempted,
+                takedowns_landed, takedowns_attempted
+            ))
+
+        conn.commit()
+        print(f"FighterStats generated for {len(fighters)} fighters!")
+    
+    except mysql.connector.Error as err:
+        print(f"Database connection error: {err}")
+    finally:
+        cursor.close()
+        if conn:
+            conn.close()
+        
