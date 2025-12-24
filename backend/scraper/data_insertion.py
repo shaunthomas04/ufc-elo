@@ -197,13 +197,29 @@ def upload_event_to_sql(conn, event_json):
     finally:
         cursor.close()
 
+
+def get_fighter_id(name, broken_fighter_lookup):
+    return broken_fighter_lookup.get(name) or normalize_and_hash_name(name)
+
 # uploads fights to sql db 
-def upload_fight_to_sql(conn, fight_json, event_name):
+def upload_fight_to_sql(conn, fight_json, event_name, broken_fighter_lookup):
     fight_id = hashlib.sha256(fight_json["fighterA"].encode("utf-8") + fight_json["fighterB"].encode("utf-8") + event_name.encode("utf-8")).hexdigest()
     event_id = hashlib.sha256(event_name.encode("utf-8")).hexdigest()
-    fighterA_id = normalize_and_hash_name(fight_json["fighterA"])
-    fighterB_id = normalize_and_hash_name(fight_json["fighterB"])
-    winner_id = normalize_and_hash_name(fight_json["winner"])
+        
+    if fight_json["fighterA"] in broken_fighter_lookup:
+        fighterA_id = broken_fighter_lookup[fight_json["fighterA"]]
+    else:
+        fighterA_id = normalize_and_hash_name(fight_json["fighterA"])
+    
+    if fight_json["fighterB"] in broken_fighter_lookup:
+        fighterB_id = broken_fighter_lookup[fight_json["fighterB"]]
+    else:
+        fighterB_id = normalize_and_hash_name(fight_json["fighterB"])
+    
+    if fight_json["winner"] in broken_fighter_lookup:
+        winner_id = broken_fighter_lookup[fight_json["winner"]]
+    else:
+        winner_id = normalize_and_hash_name(fight_json["winner"])
 
     cursor = conn.cursor()
         
@@ -229,6 +245,30 @@ def upload_fight_to_sql(conn, fight_json, event_name):
 
     finally:
         cursor.close()
+
+
+def load_fighter_id_map(path="data/failed/bad_fighters_lookup.json"):
+    """
+    Loads fighter name → fighter_id mapping from JSON.
+    Returns dict[str, str]
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    fighter_map = {}
+
+    for entry in data.get("fighters", []):
+        name = entry.get("originalName")
+        fighter_id = entry.get("id")
+
+        if not name or not fighter_id:
+            continue
+
+        # normalize key for matching
+        fighter_map[name] = fighter_id
+
+    return fighter_map
+
 
 # uploads either fighter a or b's stats into sql
 def upload_fight_stats_to_sql(conn, fight_stats, fight_id, fighter_id, isFighterA):
@@ -270,6 +310,7 @@ def upload_all_events_with_fights():
     all_events_json = get_all_raw_event_json()
     failed_fights_upload = []
     failed_events_upload = []
+    broken_fighter_lookup = load_fighter_id_map()
 
     try:
         conn = mysql.connector.connect(
@@ -289,7 +330,7 @@ def upload_all_events_with_fights():
          
                 for fight in fights:
                     try:
-                        upload_fight_to_sql(conn, fight, event_name)
+                        upload_fight_to_sql(conn, fight, event_name, broken_fighter_lookup)
                     except Exception as e:
                         failed_fights_upload.append({
                             "fighterA": fight["fighterA"],
@@ -429,9 +470,9 @@ def generate_fighter_stats():
 
 
 
-# upload_fighters_sql()
-# upload_all_events_with_fights()
-# generate_fighter_stats()
+upload_fighters_sql()
+upload_all_events_with_fights()
+generate_fighter_stats()
 
 
 def create_bad_names_lookup(failed_file_path="data/failed/failed_fight_uploads.json",
@@ -470,7 +511,7 @@ def create_bad_names_lookup(failed_file_path="data/failed/failed_fight_uploads.j
 
 
 
-
+# print(json.dumps(load_fighter_id_map(), indent=4))
 
 # create_bad_names_lookup()
 
