@@ -218,12 +218,22 @@ def upload_fight_to_sql(conn, fight_json, event_name, broken_fighter_lookup):
     
     if fight_json["winner"] in broken_fighter_lookup:
         winner_id = broken_fighter_lookup[fight_json["winner"]]
+    elif fight_json["winner"] == "NC":
+        winner_id = None
+    elif fight_json["winner"] == "DRAW":
+        winner_id = None 
     else:
         winner_id = normalize_and_hash_name(fight_json["winner"])
 
     cursor = conn.cursor()
         
     try:
+        # CHECK FOR DUPLICATE FIRST
+        cursor.execute("SELECT fight_id FROM Fights WHERE fight_id = %s", (fight_id,))
+        if cursor.fetchone():
+            print(f"⚠️  Fight already exists: {fight_json['fighterA']} vs {fight_json['fighterB']} - SKIPPING")
+            return  
+        
         cursor.callproc('AddFight', [
             fight_id,
             event_id,
