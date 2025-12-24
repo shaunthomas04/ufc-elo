@@ -268,6 +268,7 @@ def upload_fight_stats_to_sql(conn, fight_stats, fight_id, fighter_id, isFighter
 # uploads all local data event info into sql
 def upload_all_events_with_fights():
     all_events_json = get_all_raw_event_json()
+    failed_fights_upload = []
     failed_events_upload = []
 
     try:
@@ -287,8 +288,16 @@ def upload_all_events_with_fights():
                 event_name = event_data["event_info"]["event_name"]
          
                 for fight in fights:
-                    upload_fight_to_sql(conn, fight, event_name)
-       
+                    try:
+                        upload_fight_to_sql(conn, fight, event_name)
+                    except Exception as e:
+                        failed_fights_upload.append({
+                            "fighterA": fight["fighterA"],
+                            "fighterB": fight["fighterB"],
+                            "error": str(e),
+                            "error_type": type(e).__name__,
+                            "url": event_data["url"]
+                        })       
             except Exception as e:
                 print(f"Failed to upload {event_name}: {e}")
                 failed_events_upload.append({
@@ -303,16 +312,19 @@ def upload_all_events_with_fights():
             conn.close()
 
     # Save failed uploads to a JSON file
+    if failed_fights_upload:
+        os.makedirs("data/failed", exist_ok=True)
+        failed_file_path = "data/failed/failed_fight_uploads.json"
+        with open(failed_file_path, "w", encoding="utf-8") as f:
+            json.dump(failed_fights_upload, f, indent=4)
+        print(f"Saved {len(failed_fights_upload)} failed uploads to {failed_file_path}")
+
     if failed_events_upload:
         os.makedirs("data/failed", exist_ok=True)
-        failed_file_path = "data/failed/failed_event_uploads.json"
+        failed_file_path = "data/failed/failed_events_upload.json"
         with open(failed_file_path, "w", encoding="utf-8") as f:
             json.dump(failed_events_upload, f, indent=4)
         print(f"Saved {len(failed_events_upload)} failed uploads to {failed_file_path}")
-
-
-# upload_fighters_sql()
-# upload_all_events_with_fights()
 
 
 # function that goes through all fighters and aggregates their career stats
@@ -414,3 +426,56 @@ def generate_fighter_stats():
         if conn:
             conn.close()
         
+
+
+
+# upload_fighters_sql()
+# upload_all_events_with_fights()
+# generate_fighter_stats()
+
+
+def create_bad_names_lookup(failed_file_path="data/failed/failed_fight_uploads.json",
+                            output_file_path="data/failed/bad_fighters_lookup.json"):
+    """
+    Reads a failed fights JSON, extracts all fighterA and fighterB names,
+    creates a set of unique names, and writes a JSON file with
+    [{"originalName": name, "id": ""}, ...]
+    """
+    unique_names = set()
+    
+    # Read the failed fights file
+    with open(failed_file_path, "r", encoding="utf-8") as f:
+        try:
+            failed_data = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Error reading JSON: {e}")
+            return
+
+    # Collect fighterA and fighterB names
+    for fight in failed_data:
+        if "fighterA" in fight and fight["fighterA"]:
+            unique_names.add(fight["fighterA"].strip())
+        if "fighterB" in fight and fight["fighterB"]:
+            unique_names.add(fight["fighterB"].strip())
+    
+    # Prepare output list
+    output_list = [{"originalName": name, "id": ""} for name in sorted(unique_names)]
+    
+    # Write to JSON
+    with open(output_file_path, "w", encoding="utf-8") as out_f:
+        json.dump({"fighters": output_list}, out_f, indent=4)
+    
+    print(f"Saved {len(unique_names)} unique fighter names to {output_file_path}")
+
+
+
+
+
+
+# create_bad_names_lookup()
+
+
+
+
+
+
