@@ -480,9 +480,9 @@ def generate_fighter_stats():
 
 
 
-upload_fighters_sql()
-upload_all_events_with_fights()
-generate_fighter_stats()
+# upload_fighters_sql()
+# upload_all_events_with_fights()
+# generate_fighter_stats()
 
 
 def create_bad_names_lookup(failed_file_path="data/failed/failed_fight_uploads.json",
@@ -521,6 +521,96 @@ def create_bad_names_lookup(failed_file_path="data/failed/failed_fight_uploads.j
 
 
 
+# elo rating functions
+
+# Returns a list of dicts, one per row in the Fights table.
+def get_all_fights(conn):
+    cursor = conn.cursor(dictionary=True)
+
+    # Join Fights with Events to get the event date
+    query = """
+        SELECT f.*, e.event_date
+        FROM Fights f
+        JOIN Events e ON f.event_id = e.event_id
+        ORDER BY e.event_date ASC
+    """
+    cursor.execute(query)
+    fights = cursor.fetchall()
+
+    cursor.close()
+    # conn.close()
+
+    return fights
+
+
+
+# Returns number of months inactive before current_event_date.
+def months_between(d1, d2):
+    return (d2.year - d1.year) * 12 + (d2.month - d1.month)
+
+def get_months_inactive(conn, fighter_id, current_event_date):
+    query = """
+        SELECT MAX(e.event_date) AS last_fight_date
+        FROM Fights f
+        JOIN Events e ON f.event_id = e.event_id
+        WHERE (f.fighterA_id = %s OR f.fighterB_id = %s)
+          AND e.event_date < %s;
+    """
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(query, (fighter_id, fighter_id, current_event_date))
+    row = cursor.fetchone()
+
+
+    print(row)
+    last_fight_date = row["last_fight_date"]
+    cursor.close()
+
+
+    # Debut fight
+    if last_fight_date is None:
+        return 0
+
+    return months_between(last_fight_date, current_event_date)
+
+
+
+
+# def insert_elo_one_fight():
+
+
+
+
+
+
+
+
+
+def insert_all_elo_records():
+    try:
+        conn = mysql.connector.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASS,
+            database=DB_NAME
+        )
+        
+        first_fight = get_all_fights(conn)[300]
+        # print(first_fight)
+  
+        print(get_months_inactive(conn, first_fight["fighterA_id"], first_fight['event_date']))
+        
+
+    except mysql.connector.Error as err:
+        print(f"Database connection error: {err}")
+    finally:
+        if conn:
+            conn.close()
+
+
+
+
+
+insert_all_elo_records()
 # print(json.dumps(load_fighter_id_map(), indent=4))
 
 # create_bad_names_lookup()

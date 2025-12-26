@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS Fights (
     round INT,
     time_in_round TIME,
     weight_class VARCHAR(100),
-    odds_fighterA VARCHAR(10),            
+    odds_fighterA VARCHAR(10), -- this should probably be an int at some point           
     odds_fighterB VARCHAR(10),        
     FOREIGN KEY (event_id) REFERENCES Events(event_id) ON DELETE CASCADE,
     FOREIGN KEY (fighterA_id) REFERENCES Fighters(fighter_id) ON DELETE CASCADE,
