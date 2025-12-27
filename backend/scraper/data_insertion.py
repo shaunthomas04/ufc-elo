@@ -12,6 +12,8 @@ import hashlib
 from unidecode import unidecode
 import random
 from datetime import datetime, timedelta
+from backend.engine.elo import update_fight
+
 
 # Load environment variables
 load_dotenv()
@@ -477,14 +479,6 @@ def generate_fighter_stats():
         if conn:
             conn.close()
         
-
-
-
-# upload_fighters_sql()
-# upload_all_events_with_fights()
-# generate_fighter_stats()
-
-
 def create_bad_names_lookup(failed_file_path="data/failed/failed_fight_uploads.json",
                             output_file_path="data/failed/bad_fighters_lookup.json"):
     """
@@ -517,9 +511,6 @@ def create_bad_names_lookup(failed_file_path="data/failed/failed_fight_uploads.j
         json.dump({"fighters": output_list}, out_f, indent=4)
     
     print(f"Saved {len(unique_names)} unique fighter names to {output_file_path}")
-
-
-
 
 # elo rating functions
 
@@ -560,8 +551,6 @@ def get_months_inactive(conn, fighter_id, current_event_date):
     cursor.execute(query, (fighter_id, fighter_id, current_event_date))
     row = cursor.fetchone()
 
-
-    print(row)
     last_fight_date = row["last_fight_date"]
     cursor.close()
 
@@ -573,16 +562,37 @@ def get_months_inactive(conn, fighter_id, current_event_date):
     return months_between(last_fight_date, current_event_date)
 
 
+# Get the most recent Elo rating for a fighter.
+def get_fighter_current_elo(conn, fighter_id):
+    query = """
+        SELECT elo_score, rating_date
+        FROM FighterElo
+        WHERE fighter_id = %s
+        ORDER BY rating_date DESC
+        LIMIT 1;
+    """
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(query, (fighter_id,))
+    row = cursor.fetchone()
+    cursor.close()
+    
+    if row is None:
+        return None
+    
+    return float(row["elo_score"])
 
 
-# def insert_elo_one_fight():
-
-
-
-
-
-
-
+def insert_elo_one_fight(conn, p_fighter, p_elo, p_date):
+    cursor = conn.cursor()
+    try:
+        cursor.callproc('InsertEloRating', [
+            p_fighter,
+            p_elo,
+            p_date,
+        ])
+        conn.commit()
+    finally:
+        cursor.close()
 
 
 def insert_all_elo_records():
@@ -594,11 +604,44 @@ def insert_all_elo_records():
             database=DB_NAME
         )
         
-        first_fight = get_all_fights(conn)[300]
-        # print(first_fight)
-  
-        print(get_months_inactive(conn, first_fight["fighterA_id"], first_fight['event_date']))
-        
+        fights = get_all_fights(conn)
+        for fight in fights:
+            event_date = fight['event_date']
+
+            
+            if fight["fighterA_id"] == fight["winner_id"]:
+                fighterA_won = True
+            elif fight["fighterB_id"] == fight["winner_id"]:
+                fighterA_won = False
+            else:
+                print(f"Skipping NC/Draw: {fight['fight_id']}")
+                continue
+
+            # 1500 starting elo if none
+            fighterA_elo = get_fighter_current_elo(conn, fight["fighterA_id"]) or 1500.0
+            fighterB_elo = get_fighter_current_elo(conn, fight["fighterB_id"]) or 1500.0
+
+            fighterA_months_inactive = get_months_inactive(conn, fight["fighterA_id"], event_date)
+            fighterB_months_inactive = get_months_inactive(conn, fight["fighterB_id"], event_date)
+
+            # dicts for function have none when missing odds info not given in source
+            fighterA = {
+                "rating": fighterA_elo, 
+                "inactivity": fighterA_months_inactive,
+                "odds": fight.get("odds_fighterA") if fight.get("odds_fighterA") not in ['-', '', None] else None
+            }
+            fighterB = {
+                "rating": fighterB_elo, 
+                "inactivity": fighterB_months_inactive,
+                "odds": fight.get("odds_fighterB") if fight.get("odds_fighterB") not in ['-', '', None] else None
+            }
+
+            # caluclute deltas and add them to current elo
+            deltaA, deltaB = update_fight(fighterA, fighterB, fighterA_won)
+            insert_elo_one_fight(conn, fight["fighterA_id"], fighterA_elo + deltaA, event_date)
+            insert_elo_one_fight(conn, fight["fighterB_id"], fighterB_elo + deltaB, event_date)
+
+            print(f"Inserted fight {fight["fight_id"]}")
 
     except mysql.connector.Error as err:
         print(f"Database connection error: {err}")
@@ -610,13 +653,7 @@ def insert_all_elo_records():
 
 
 
+# upload_fighters_sql()
+# upload_all_events_with_fights()
+# generate_fighter_stats()
 insert_all_elo_records()
-# print(json.dumps(load_fighter_id_map(), indent=4))
-
-# create_bad_names_lookup()
-
-
-
-
-
-
