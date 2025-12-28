@@ -1,48 +1,24 @@
 import React from 'react';
-import type { Fighter } from '../types/Fighter';
+import type { WeightClass, Fighter } from '../types';
 import { FighterCard } from './FighterCard';
 
 interface RankingsListProps {
+  weightClass: WeightClass;
   fighters: Fighter[];
-  selectedWeightClass: string;
-  searchQuery: string;
-  onClearSearch: () => void;
 }
 
-export const RankingsList: React.FC<RankingsListProps> = ({
-  fighters,
-  selectedWeightClass,
-  searchQuery,
-  onClearSearch
-}) => {
-  const isPoundForPound = selectedWeightClass === 'Pound-for-Pound';
-
+export const RankingsList: React.FC<RankingsListProps> = ({ weightClass, fighters }) => {
   return (
-    <div className="rankings-container">
-      <div className="rankings-header">
-        <h2 className="rankings-title">{selectedWeightClass}</h2>
-        {!isPoundForPound && <div className="rankings-subtitle">Division Rankings</div>}
-      </div>
-
-      <div className="rankings-table">
-        {fighters.length === 0 ? (
-          <div className="empty-state">
-            <p>No fighters found matching "{searchQuery}"</p>
-            <button onClick={onClearSearch} className="clear-button">
-              Clear Search
-            </button>
-          </div>
-        ) : (
-          <div className="fighters-list">
-            {fighters.map((fighter) => (
-              <FighterCard
-                key={fighter.fighter_id}
-                fighter={fighter}
-                showWeightClass={isPoundForPound}
-              />
-            ))}
-          </div>
-        )}
+    <div className="flex-1 overflow-y-auto flex justify-center">
+      <div className="w-full max-w-4xl px-6 py-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
+          {weightClass} Division
+        </h2>
+        <div className="space-y-3">
+          {fighters.map((fighter) => (
+            <FighterCard key={fighter.rank} fighter={fighter} />
+          ))}
+        </div>
       </div>
     </div>
   );
