@@ -1,6 +1,7 @@
 export interface Fighter {
   rank: number;
-  name: string;
+  firstname: string;
+  lastname: string;
   nickname: string;
   image: string;
   elo: number;
