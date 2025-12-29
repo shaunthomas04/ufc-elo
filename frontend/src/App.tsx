@@ -161,7 +161,7 @@ export const rankingsData: RankingsData = {
 };
 
 const App: React.FC = () => {
-  const [selectedClass, setSelectedClass] = useState<WeightClass>('Men Heavyweight');
+  const [selectedClass, setSelectedClass] = useState<WeightClass>('Men Pound-for-Pound');
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
