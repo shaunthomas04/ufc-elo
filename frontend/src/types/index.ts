@@ -7,7 +7,20 @@ export interface Fighter {
   elo: number;
 }
 
-export type WeightClass = 'Heavyweight' | 'Light Heavyweight' | 'Middleweight';
+export type WeightClass =
+  | 'Men Pound-for-Pound'
+  | 'Men Heavyweight'
+  | 'Men Light Heavyweight'
+  | 'Men Middleweight'
+  | 'Men Welterweight'
+  | 'Men Lightweight'
+  | 'Men Featherweight'
+  | 'Men Bantamweight'
+  | 'Men Flyweight'
+  | 'Women Pound-for-Pound'
+  | 'Women Bantamweight'
+  | 'Women Flyweight'
+  | 'Women Strawweight';
 
 export interface RankingsData {
   [key: string]: Fighter[];

@@ -10,11 +10,12 @@ interface RankingsListProps {
 export const RankingsList: React.FC<RankingsListProps> = ({ weightClass, fighters }) => {
   return (
     <div className="flex-1 overflow-y-auto flex justify-center">
-      <div className="w-full max-w-4xl px-6 py-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
+      <div className="w-[80%] max-w-[1400px] px-6 py-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-8 text-center">
           {weightClass} Division
         </h2>
-        <div className="space-y-3">
+
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(20rem,1fr))] gap-8 justify-items-center">
           {fighters.map((fighter) => (
             <FighterCard key={fighter.rank} fighter={fighter} />
           ))}

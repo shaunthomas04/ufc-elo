@@ -7,7 +7,7 @@ interface FighterCardProps {
 
 export const FighterCard: React.FC<FighterCardProps> = ({ fighter }) => {
   return (
-    <div className="group relative w-80 bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl">
+    <div className="group relative w-70 bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl">
       
       {/* Top section: Image + overlays */}
       <div className="relative h-52 overflow-hidden">
