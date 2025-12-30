@@ -4,6 +4,52 @@ import { Navbar } from './components/Navbar';
 import { FighterInfo } from './components/FighterInfo'; 
 import { RankingsList } from './components/RankingsList';
 
+const dummyFights = [
+  {
+    fight_id: "1",
+    event: {
+      event_name: "UFC 285",
+      event_date: "2023-03-04",
+      venue: "T-Mobile Arena",
+      city: "Las Vegas",
+      country: "USA"
+    },
+    weight_class: "Light Heavyweight",
+    finish_method: "KO/TKO",
+    round: 2,
+    time_in_round: "3:15",
+    odds: { fighter: -150, opponent: +130 },
+    fighter: {
+      fighter_id: "2335639",
+      first_name: "Jon",
+      last_name: "Jones",
+      stats: {
+        strikes_landed: 50,
+        strikes_attempted: 60,
+        takedowns_landed: 1,
+        takedowns_attempted: 2,
+        submissions_attempted: 0,
+        knockdowns: 1
+      },
+      image_url: "https://a.espncdn.com/i/headshots/mma/players/full/2335639.png"
+    },
+    opponent: {
+      fighter_id: "1234567",
+      first_name: "Ciryl",
+      last_name: "Gane",
+      stats: {
+        strikes_landed: 30,
+        strikes_attempted: 40,
+        takedowns_landed: 0,
+        takedowns_attempted: 1,
+        submissions_attempted: 0,
+        knockdowns: 0
+      },
+      image_url: "https://randomuser.me/api/portraits/men/2.jpg"
+    }
+  }
+];
+
 export const rankingsData: RankingsData = {
   "Men Pound-for-Pound": [
     { rank: 1, firstname: 'Jon', lastname: 'Jones', nickname: 'Bones', image: 'https://a.espncdn.com/i/headshots/mma/players/full/2335639.png', elo: 1850 },
@@ -193,8 +239,8 @@ const App: React.FC = () => {
         koWins={10}
         subWins={7}
         decisionWins={10}
+        eloHistory={[1500, 1520, 1550, 1580, 1600]} // example data
       />
-
     </div>
   );
 };
