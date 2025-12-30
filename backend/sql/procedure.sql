@@ -1,3 +1,4 @@
+USE UFC_ELO;
 -- ======================
 -- Add fighter procedure
 -- ======================
@@ -267,4 +268,71 @@ CREATE PROCEDURE GetFighterProfile(IN p_fighter VARCHAR(128))
 BEGIN
     SELECT * FROM Fighters WHERE fighter_id = p_fighter;
 END//
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS GetTopEloRankings;
+DELIMITER $$
+
+CREATE PROCEDURE GetTopEloRankings(
+    IN ranking_date DATE,
+    IN p_weight_class VARCHAR(100) -- NULL or 'PFP' for pound-for-pound
+)
+BEGIN
+    -- Temporary table: latest Elo per fighter up to ranking_date
+    DROP TEMPORARY TABLE IF EXISTS TempLatestElo;
+    CREATE TEMPORARY TABLE TempLatestElo AS
+    SELECT fe.fighter_id, fe.elo_score, fe.rating_date
+    FROM FighterElo fe
+    JOIN (
+        SELECT fighter_id, MAX(rating_date) AS latest_date
+        FROM FighterElo
+        WHERE rating_date <= ranking_date
+        GROUP BY fighter_id
+    ) tmax ON fe.fighter_id = tmax.fighter_id AND fe.rating_date = tmax.latest_date;
+
+    -- Pound-for-pound: if p_weight_class is NULL or 'PFP'
+    IF p_weight_class IS NULL OR p_weight_class = 'Pound For Pound' THEN
+        SELECT f.fighter_id, f.first_name, f.last_name, f.nickname, tle.elo_score
+        FROM TempLatestElo tle
+        JOIN Fighters f ON f.fighter_id = tle.fighter_id
+        ORDER BY tle.elo_score DESC
+        LIMIT 15;
+
+    ELSE
+        -- Top fighters in a given weight class inferred from fights
+        DROP TEMPORARY TABLE IF EXISTS TempEloWithWeight;
+        CREATE TEMPORARY TABLE TempEloWithWeight AS
+        SELECT tle.fighter_id, f.first_name, f.last_name, f.nickname,
+               (SELECT f2.weight_class 
+                FROM Fights f2
+                JOIN Events e2 ON f2.event_id = e2.event_id
+                WHERE (f2.fighterA_id = f.fighter_id OR f2.fighterB_id = f.fighter_id)
+                  AND e2.event_date <= ranking_date
+                ORDER BY e2.event_date DESC
+                LIMIT 1) AS weight_class,
+               tle.elo_score
+        FROM TempLatestElo tle
+        JOIN Fighters f ON f.fighter_id = tle.fighter_id;
+
+        -- Rank top 15 per this weight class
+        SET @curr_weight := '';
+        SET @rank := 0;
+
+        SELECT fighter_id, first_name, last_name, nickname, weight_class, elo_score
+        FROM (
+            SELECT *,
+                   @rank := IF(@curr_weight = weight_class, @rank + 1, 1) AS rank_in_class,
+                   @curr_weight := weight_class
+            FROM TempEloWithWeight
+            WHERE weight_class = p_weight_class
+            ORDER BY weight_class, elo_score DESC
+        ) t
+        WHERE rank_in_class <= 15;
+    END IF;
+
+END $$
+
+DELIMITER ;
+
+
 DELIMITER ;

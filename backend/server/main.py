@@ -48,11 +48,22 @@ async def get_p4p_rankings(year: int, month: int):
 
 
 # Pound-for-pound rankings
-@app.get("/rankings/{year}/{month}/{day}")
+@app.get("/monthly-rankings/{year}/{month}/{day}")
 async def get_monthly_rankings(year: int, month: int, day: int):
 
     WEIGHT_CLASSES = [
-        "Men Flyweight"
+        "Men Heavyweight",
+        "Men Light Heavyweight",
+        "Men Middleweight",
+        "Men Welterweight",
+        "Men Lightweight",
+        "Men Featherweight",
+        "Men Bantamweight",
+        "Men Flyweight",
+        "Women Bantamweight",
+        "Women Flyweight",
+        "Women Strawweight",
+        "Pound For Pound"
     ]
 
     ranking_date = date(year, month, day)

@@ -8,7 +8,7 @@ export interface Fighter {
 }
 
 export type WeightClass =
-  | 'Men Pound-for-Pound'
+  | 'Pound For Pound'
   | 'Men Heavyweight'
   | 'Men Light Heavyweight'
   | 'Men Middleweight'
