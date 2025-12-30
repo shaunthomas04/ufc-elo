@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { WeightClass, RankingsData} from './types';
 import { Navbar } from './components/Navbar';
+import { FighterInfo } from './components/FighterInfo'; 
 import { RankingsList } from './components/RankingsList';
 
 export const rankingsData: RankingsData = {
@@ -178,7 +179,22 @@ const App: React.FC = () => {
         onDateChange={setSelectedDate}
         weightClasses={weightClasses}
       />
-      <RankingsList weightClass={selectedClass} fighters={fighters} />
+      {/* <RankingsList weightClass={selectedClass} fighters={fighters} /> */}
+      <FighterInfo
+        image="https://a.espncdn.com/i/headshots/mma/players/full/2335639.png"
+        firstname="Jon"
+        lastname="Jones"
+        nickname="Bones"
+        birthday="July 19, 1987"
+        weightClass="Heavyweight"
+        height="6'4\"
+        reach="84.5\"
+        record="27-1-0"
+        koWins={10}
+        subWins={7}
+        decisionWins={10}
+      />
+
     </div>
   );
 };
