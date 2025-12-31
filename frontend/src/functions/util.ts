@@ -30,3 +30,5 @@ export async function apiGet<T = unknown>(endpoint: string): Promise<T> {
 
   return res.json() as Promise<T>;
 }
+
+export const formatDate = (date: string): string => date.replace(/-/g, '/');

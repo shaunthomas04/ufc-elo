@@ -3,7 +3,7 @@ import type { WeightClass, Fighter} from './types';
 import { Navbar } from './components/Navbar';
 import { FighterInfo } from './components/FighterInfo'; 
 import { RankingsList } from './components/RankingsList';
-import { mapRankingsToFighterType } from './functions/util'
+import { mapRankingsToFighterType, formatDate } from './functions/util'
 import { ThreeDot } from "react-loading-indicators";
 import { apiGet } from "../src/functions/util"
 import type { RawRankings, NormalizedRankings} from "../src/functions/util"
@@ -1514,26 +1514,28 @@ const dummyResponseType = mapRankingsToFighterType(dummyResponse)
 
 
 const App: React.FC = () => {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true);
   const [fighterResponseInfo, setFighterResponseInfo] = useState<NormalizedRankings | null>(null);
   
   const [selectedClass, setSelectedClass] = useState<WeightClass>('Pound For Pound');
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
+    new Date().toISOString().split('T')[0] 
   );
 
   useEffect(() => {
     let isMounted = true; // prevents state update after unmount
     setLoading(true);
 
-    apiGet<RawRankings>("http://127.0.0.1:8000/monthly-rankings/2025/12/29")
+    const formattedDate = formatDate(selectedDate)
+    console.log(formattedDate)
+    apiGet<RawRankings>(`http://127.0.0.1:8000/monthly-rankings/${formattedDate}`)
       .then(rawData => {
         if (!isMounted) return;
 
-        // Map the API response to your RankingsData type
+        // Map the API response to your normalized type
         const cleanedData = mapRankingsToFighterType(rawData);
 
-        setFighterResponseInfo(cleanedData); // now matches your RankingsData type
+        setFighterResponseInfo(cleanedData); 
         console.log("Mapped RankingsData:", cleanedData);
 
         setLoading(false);
@@ -1546,17 +1548,18 @@ const App: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [selectedDate]);
 
 
+  // Use the API data instead of the dummy data
+  const weightClasses = fighterResponseInfo
+    ? (Object.keys(fighterResponseInfo) as WeightClass[])
+    : [];
 
-
-
-  const weightClasses = Object.keys(mapRankingsToFighterType(dummyResponseType)) as WeightClass[];
-  const fighters = dummyResponseType[selectedClass] || [];
+  const fighters = fighterResponseInfo?.[selectedClass] || [];
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50">      
       <Navbar
         selectedClass={selectedClass}
         onClassChange={setSelectedClass}
