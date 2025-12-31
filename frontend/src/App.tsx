@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { WeightClass, Fighter} from './types';
 import { Navbar } from './components/Navbar';
 import { FighterInfo } from './components/FighterInfo'; 
 import { RankingsList } from './components/RankingsList';
 import { mapRankingsToFighterType } from './functions/util'
+import { ThreeDot } from "react-loading-indicators";
+import { apiGet } from "../src/functions/util"
+import type { RawRankings, NormalizedRankings} from "../src/functions/util"
+
 
 const dummyFights = [
   {
@@ -1506,11 +1510,47 @@ const dummyResponse = {
 const dummyResponseType = mapRankingsToFighterType(dummyResponse)
 
 
+
+
+
 const App: React.FC = () => {
+  const [loading, setLoading] = useState(true)
+  const [fighterResponseInfo, setFighterResponseInfo] = useState<NormalizedRankings | null>(null);
+  
   const [selectedClass, setSelectedClass] = useState<WeightClass>('Pound For Pound');
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
+
+  useEffect(() => {
+    let isMounted = true; // prevents state update after unmount
+    setLoading(true);
+
+    apiGet<RawRankings>("http://127.0.0.1:8000/monthly-rankings/2025/12/29")
+      .then(rawData => {
+        if (!isMounted) return;
+
+        // Map the API response to your RankingsData type
+        const cleanedData = mapRankingsToFighterType(rawData);
+
+        setFighterResponseInfo(cleanedData); // now matches your RankingsData type
+        console.log("Mapped RankingsData:", cleanedData);
+
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to load rankings:", err);
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+
+
+
 
   const weightClasses = Object.keys(mapRankingsToFighterType(dummyResponseType)) as WeightClass[];
   const fighters = dummyResponseType[selectedClass] || [];
@@ -1524,7 +1564,21 @@ const App: React.FC = () => {
         onDateChange={setSelectedDate}
         weightClasses={weightClasses}
       />
-      <RankingsList weightClass={selectedClass} fighters={fighters} />
+      
+      
+      
+      {/* <RankingsList weightClass={selectedClass} fighters={fighters} /> */}
+      {loading ? (
+        <ThreeDot variant="pulsate" color="#e11515" size="medium" text="" textColor="" />
+      ) : (
+        <RankingsList
+          weightClass={selectedClass}
+          fighters={fighters}
+        />
+      )}
+
+
+
       {/* <FighterInfo
         image="https://a.espncdn.com/i/headshots/mma/players/full/2335639.png"
         firstname="Jon"

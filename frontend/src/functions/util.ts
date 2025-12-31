@@ -1,7 +1,7 @@
 import type { Fighter } from "../types";
 
-type RawRankings = Record<string, any[]>; 
-type NormalizedRankings = Record<string, Fighter[]>;
+export type RawRankings = Record<string, any[]>; 
+export type NormalizedRankings = Record<string, Fighter[]>;
 
 export function mapRankingsToFighterType(raw: RawRankings): NormalizedRankings {
   const normalized: NormalizedRankings = {};
@@ -18,4 +18,15 @@ export function mapRankingsToFighterType(raw: RawRankings): NormalizedRankings {
   }
 
   return normalized;
+}
+
+
+export async function apiGet<T = unknown>(endpoint: string): Promise<T> {
+  const res = await fetch(endpoint);
+
+  if (!res.ok) {
+    throw new Error(`Request failed: ${res.status} ${res.statusText}`);
+  }
+
+  return res.json() as Promise<T>;
 }
